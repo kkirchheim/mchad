@@ -1,0 +1,6 @@
+scheduler:
+  _target_: src.utils.scheduler.CosineSchedulerWrapper
+  epochs: ${trainer.min_epochs}
+  batches_per_epoch: ${trainer.limit_train_batches}
+interval: step
+frequency: 1

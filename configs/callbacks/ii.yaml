@@ -1,0 +1,7 @@
+defaults:
+  - default.yaml
+
+distance:
+  _target_: src.callbacks.distance.DistanceThresholding
+  use_in_val: True
+  use_in_test: True

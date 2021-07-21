@@ -1,0 +1,24 @@
+# @package _global_
+
+defaults:
+  - override /trainer: cifar10
+  - override /model: null
+  - override /datamodule: cifar10
+  - override /callbacks: cac
+  - override /logger: default
+  - override /testmodules: cifar10
+  - override /model/backbone: wideresnet
+  - override /model/scheduler: cosine
+  - override /model/optimizer: adam
+
+seed: 12345
+# TODO: not all operations are implemented as deterministic
+deterministic: False
+debug: False
+
+model:
+  _target_: src.models.CAC
+  n_classes: 10
+  n_embedding: ${model.n_classes}
+  weight_center: 2.0
+  magnitude: 2.0

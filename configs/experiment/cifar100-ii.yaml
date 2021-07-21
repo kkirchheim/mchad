@@ -1,0 +1,22 @@
+# @package _global_
+
+defaults:
+  - override /trainer: cifar100
+  - override /model: null
+  - override /datamodule: cifar100
+  - override /callbacks: ii
+  - override /logger: default
+  - override /testmodules: cifar100
+  - override /model/backbone: wideresnet
+  - override /model/scheduler: cosine
+  - override /model/optimizer: adam
+
+seed: 12345
+deterministic: False # TODO: not all operations are implemented as deterministic
+debug: False
+ignore_warnings: True
+
+model:
+  _target_: src.models.IIModel
+  n_classes: 100
+  n_embedding: 64

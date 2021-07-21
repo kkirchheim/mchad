@@ -1,0 +1,23 @@
+# @package _global_
+
+defaults:
+  - override /trainer: svhn
+  - override /model: null
+  - override /datamodule: svhn
+  - override /callbacks: center
+  - override /logger: default
+  - override /testmodules: svhn
+  - override /model/backbone: wideresnet
+  - override /model/scheduler: cosine
+  - override /model/optimizer: adam
+
+seed: 12345
+deterministic: True
+debug: False
+ignore_warnings: True
+
+model:
+  _target_: src.models.Center
+  n_classes: 10
+  n_embedding: 16
+  weight_center: 0.5 # default, as given in the paper

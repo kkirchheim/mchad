@@ -1,0 +1,32 @@
+_target_: src.datamodules.MultiDatamodule
+module1:
+  _target_: src.datamodules.CIFAR100DataModule
+  normalize:
+    # https://github.com/wetliu/energy_ood/blob/master/CIFAR/train.py
+    mean:
+      [0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666]
+    std:
+      [0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215]
+  data_dir: ${dataset_dir}
+  batch_size: 128
+  num_workers: 20
+  pin_memory: False
+  data_order_seed: 1234
+  data_split_seed: 1234
+module2:
+  _target_: src.datamodules.SingleOODDataModule
+  dataset:
+    _target_: pytorch_ood.dataset.img.TinyImages300k
+    root: ${dataset_dir}
+    download: True
+  normalize:
+    # https://github.com/wetliu/energy_ood/blob/master/CIFAR/train.py
+    mean:
+      [0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666]
+    std:
+      [0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215]
+  batch_size: 256
+  num_workers: 20
+  pin_memory: False
+  data_order_seed: 1234
+  data_split_seed: 1234

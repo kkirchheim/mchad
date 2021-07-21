@@ -1,0 +1,3 @@
+yaml:
+  _target_: src.logger.YamlLogger
+  filename: "config.yaml"

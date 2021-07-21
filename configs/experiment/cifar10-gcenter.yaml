@@ -1,0 +1,26 @@
+# @package _global_
+
+defaults:
+  - override /trainer: cifar10
+  - override /model: null
+  - override /datamodule: cifar10-oe
+  - override /callbacks: center
+  - override /logger: default
+  - override /testmodules: cifar10
+  - override /model/backbone: wideresnet
+  - override /model/scheduler: cosine
+  - override /model/optimizer: adam
+
+seed: 12345
+deterministic: True
+debug: False
+ignore_warnings: True
+
+model:
+  _target_: src.models.GCenter
+  n_classes: 10
+  n_embedding: 16 # has to match output of backbone
+  margin: 4
+  weight_center: 1.0
+  weight_oe: 0.000008
+  weight_ce: 1.5

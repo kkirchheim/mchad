@@ -1,0 +1,106 @@
+# define test cases for models trained on the SVHN
+test_vs_textures:
+  _target_: src.datamodules.ood_datamodule.OODDataModule
+  normalize:
+    # https://albumentations.ai/docs/autoalbument/examples/svhn/
+    mean: [0.4376821, 0.4437697, 0.47280442]
+    std: [0.19803012, 0.20101562, 0.19703614]
+  data_in:
+    _target_: torchvision.datasets.SVHN
+    root: ${data_dir}
+    split: "test"
+    download: True
+  data_out:
+    _target_: pytorch_ood.dataset.img.Textures
+    root: ${data_dir}
+    download: True
+test_vs_uniformnoise:
+  _target_: src.datamodules.ood_datamodule.OODDataModule
+  normalize:
+    # https://albumentations.ai/docs/autoalbument/examples/svhn/
+    mean: [0.4376821, 0.4437697, 0.47280442]
+    std: [0.19803012, 0.20101562, 0.19703614]
+  data_in:
+    _target_: torchvision.datasets.SVHN
+    root: ${data_dir}
+    split: "test"
+    download: True
+  data_out:
+    _target_: pytorch_ood.dataset.img.UniformNoise
+    length: 10000
+    size: [32, 32, 3]
+test_vs_gaussiannoise:
+  _target_: src.datamodules.ood_datamodule.OODDataModule
+  normalize:
+    # https://albumentations.ai/docs/autoalbument/examples/svhn/
+    mean: [0.4376821, 0.4437697, 0.47280442]
+    std: [0.19803012, 0.20101562, 0.19703614]
+  data_in:
+    _target_: torchvision.datasets.SVHN
+    root: ${data_dir}
+    split: "test"
+    download: True
+  data_out:
+    _target_:  pytorch_ood.dataset.img.GaussianNoise
+    length: 10000
+    size: [32, 32, 3]
+test_vs_tinycrop:
+  _target_: src.datamodules.ood_datamodule.OODDataModule
+  normalize:
+    # https://albumentations.ai/docs/autoalbument/examples/svhn/
+    mean: [0.4376821, 0.4437697, 0.47280442]
+    std: [0.19803012, 0.20101562, 0.19703614]
+  data_in:
+    _target_: torchvision.datasets.SVHN
+    root: ${data_dir}
+    split: "test"
+    download: True
+  data_out:
+    _target_: pytorch_ood.dataset.img.TinyImageNetCrop
+    root: ${data_dir}
+    download: True
+test_vs_tinyresize:
+  _target_: src.datamodules.ood_datamodule.OODDataModule
+  normalize:
+    # https://albumentations.ai/docs/autoalbument/examples/svhn/
+    mean: [0.4376821, 0.4437697, 0.47280442]
+    std: [0.19803012, 0.20101562, 0.19703614]
+  data_in:
+    _target_: torchvision.datasets.SVHN
+    root: ${data_dir}
+    split: "test"
+    download: True
+  data_out:
+    _target_: pytorch_ood.dataset.img.TinyImageNetResize
+    root: ${data_dir}
+    download: True
+test_vs_lsuncrop:
+  _target_: src.datamodules.ood_datamodule.OODDataModule
+  normalize:
+    # https://albumentations.ai/docs/autoalbument/examples/svhn/
+    mean: [0.4376821, 0.4437697, 0.47280442]
+    std: [0.19803012, 0.20101562, 0.19703614]
+  data_in:
+    _target_: torchvision.datasets.SVHN
+    root: ${data_dir}
+    split: "test"
+    download: True
+  data_out:
+    _target_:  pytorch_ood.dataset.img.LSUNCrop
+    root: ${data_dir}
+    download: True
+test_vs_lsunresize:
+  _target_: src.datamodules.ood_datamodule.OODDataModule
+  normalize:
+    # https://albumentations.ai/docs/autoalbument/examples/svhn/
+    mean: [0.4376821, 0.4437697, 0.47280442]
+    std: [0.19803012, 0.20101562, 0.19703614]
+  data_in:
+    _target_: torchvision.datasets.SVHN
+    root: ${data_dir}
+    split: "test"
+    download: True
+  data_out:
+    _target_: pytorch_ood.dataset.img.LSUNResize
+    root: ${data_dir}
+    download: True

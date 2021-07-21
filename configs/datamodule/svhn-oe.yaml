@@ -1,0 +1,28 @@
+_target_: src.datamodules.MultiDatamodule
+module1:
+  _target_: src.datamodules.SVHNDataModule
+  normalize:
+    # https://albumentations.ai/docs/autoalbument/examples/svhn/
+    mean: [0.4376821, 0.4437697, 0.47280442]
+    std: [0.19803012, 0.20101562, 0.19703614]
+  data_dir: ${dataset_dir}
+  batch_size: 128
+  num_workers: 20
+  pin_memory: False
+  data_order_seed: 1234
+  data_split_seed: 1234
+module2:
+  _target_: src.datamodules.SingleOODDataModule
+  dataset:
+    _target_: pytorch_ood.dataset.img.TinyImages300k
+    root: ${dataset_dir}
+    download: True
+  normalize:
+    # https://albumentations.ai/docs/autoalbument/examples/svhn/
+    mean: [0.4376821, 0.4437697, 0.47280442]
+    std: [0.19803012, 0.20101562, 0.19703614]
+  batch_size: 256
+  num_workers: 20
+  pin_memory: False
+  data_order_seed: 1234
+  data_split_seed: 1234

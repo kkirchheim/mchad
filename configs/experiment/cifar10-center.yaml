@@ -1,0 +1,23 @@
+# @package _global_
+
+defaults:
+  - override /trainer: cifar10
+  - override /model: null
+  - override /datamodule: cifar10
+  - override /callbacks: center
+  - override /logger: default
+  - override /testmodules: cifar10
+  - override /model/backbone: wideresnet
+  - override /model/scheduler: cosine
+  - override /model/optimizer: adam
+
+seed: 12345
+deterministic: True
+debug: False
+
+
+model:
+  _target_: src.models.Center
+  n_classes: 10
+  n_embedding: 16
+  weight_center: 0.5 # default, as given in the paper
