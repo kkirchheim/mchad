@@ -1,0 +1,7 @@
+_target_: src.datamodules.svhn_datamodule.SVHNDataModule
+
+data_dir: ${data_dir} # data_dir is specified in config.yaml
+batch_size: 128
+train_val_test_split: [84_289, 5_000, 10_000]
+num_workers: 10
+pin_memory: False

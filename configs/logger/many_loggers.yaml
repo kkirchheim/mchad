@@ -6,5 +6,5 @@ defaults:
   - csv.yaml
   # - mlflow.yaml
   # - neptune.yaml
-  # - tensorboard.yaml
-  - wandb.yaml
+  - tensorboard.yaml
+  # - wandb.yaml

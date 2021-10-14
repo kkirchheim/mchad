@@ -1,5 +1,4 @@
 import logging
-import os
 import warnings
 from typing import List, Sequence
 
@@ -7,6 +6,7 @@ import pytorch_lightning as pl
 import rich.syntax
 import rich.tree
 from omegaconf import DictConfig, OmegaConf
+from pytorch_lightning.loggers.wandb import WandbLogger
 from pytorch_lightning.utilities import rank_zero_only
 
 
@@ -29,6 +29,7 @@ def extras(config: DictConfig) -> None:
     - disabling warnings
     - easier access to debug mode
     - forcing debug friendly configuration
+    - forcing multi-gpu friendly configuration
 
     Modifies DictConfig in place.
 
@@ -62,6 +63,15 @@ def extras(config: DictConfig) -> None:
         if config.datamodule.get("num_workers"):
             config.datamodule.num_workers = 0
 
+    # force multi-gpu friendly configuration if <config.trainer.accelerator=ddp>
+    accelerator = config.trainer.get("accelerator")
+    if accelerator in ["ddp", "ddp_spawn", "dp", "ddp2"]:
+        log.info(f"Forcing ddp friendly configuration! <config.trainer.accelerator={accelerator}>")
+        if config.datamodule.get("num_workers"):
+            config.datamodule.num_workers = 0
+        if config.datamodule.get("pin_memory"):
+            config.datamodule.pin_memory = False
+
     # disable adding new keys to config
     OmegaConf.set_struct(config, True)
 
@@ -73,6 +83,7 @@ def print_config(
         "trainer",
         "model",
         "datamodule",
+        "testmodules",
         "callbacks",
         "logger",
         "seed",
@@ -89,7 +100,7 @@ def print_config(
     """
 
     style = "dim"
-    tree = rich.tree.Tree("CONFIG", style=style, guide_style=style)
+    tree = rich.tree.Tree(":gear: CONFIG", style=style, guide_style=style)
 
     for field in fields:
         branch = tree.add(field, style=style, guide_style=style)
@@ -102,9 +113,6 @@ def print_config(
         branch.add(rich.syntax.Syntax(branch_content, "yaml"))
 
     rich.print(tree)
-
-    with open("config_tree.txt", "w") as fp:
-        rich.print(tree, file=fp)
 
 
 def empty(*args, **kwargs):
@@ -132,8 +140,6 @@ def log_hyperparameters(
     hparams["trainer"] = config["trainer"]
     hparams["model"] = config["model"]
     hparams["datamodule"] = config["datamodule"]
-    if "seed" in config:
-        hparams["seed"] = config["seed"]
     if "callbacks" in config:
         hparams["callbacks"] = config["callbacks"]
 
@@ -164,10 +170,4 @@ def finish(
     logger: List[pl.loggers.LightningLoggerBase],
 ) -> None:
     """Makes sure everything closed properly."""
-
-    # without this sweeps with wandb logger might crash!
-    for lg in logger:
-        if isinstance(lg, pl.loggers.wandb.WandbLogger):
-            import wandb
-
-            wandb.finish()
+    pass

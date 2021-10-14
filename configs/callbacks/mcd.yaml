@@ -1,0 +1,9 @@
+defaults:
+  - default.yaml
+
+mcd:
+  _target_: src.callbacks.mcd.MonteCarloDropout
+  num_classes: 8
+  rounds: 10
+  use_in_val: True
+  use_in_test: True

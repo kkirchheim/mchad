@@ -12,7 +12,7 @@ hydra-optuna-sweeper==1.1.0
 # hydra-submitit-launcher
 
 # --------- loggers --------- #
-wandb
+# wandb
 # neptune-client
 # mlflow
 # comet-ml
@@ -20,7 +20,7 @@ wandb
 
 # --------- linters --------- #
 pre-commit      # hooks for applying linters on commit
-black           # code formatting
+# black           # code formatting
 isort           # import sorting
 flake8          # code analysis
 

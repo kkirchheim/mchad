@@ -1,0 +1,6 @@
+ray:
+  init:
+    num_gpus: 1
+  remote:
+    num_gpus: 0.33
+    num_cpus: 2
