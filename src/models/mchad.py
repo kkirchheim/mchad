@@ -32,6 +32,7 @@ class MCHAD(LightningModule):
             pretrained=None,
             n_classes=10,
             n_embedding=10,
+            radius=1.0,
             **kwargs
     ):
         super().__init__()
@@ -48,7 +49,7 @@ class MCHAD(LightningModule):
         self.weight_oe = weight_oe
         self.weight_center = weight_center
 
-        self.radius = torch.nn.Parameter(torch.ones(size=(1,)))
+        self.radius = torch.nn.Parameter(torch.tensor([radius]).float())
         self.radius.requires_grad = False
 
         # count the number of calls to test_epoch_end
