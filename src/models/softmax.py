@@ -2,8 +2,6 @@ import logging
 from typing import Any, List
 
 import torch
-from torch import nn
-import numpy as np
 from pytorch_lightning import LightningModule
 import hydra
 
@@ -43,13 +41,10 @@ class MCHAD(LightningModule):
         self.model = hydra.utils.instantiate(backbone)
 
         # loss function
-        self.center_loss = MCHADLoss(n_classes=n_classes, n_embedding=n_embedding)
-        self.ce_loss = nn.CrossEntropyLoss()
+        self.ce_loss = torch.nn.CrossEntropyLoss()
+        self.center_loss = CenterLoss(n_classes=n_classes, n_embedding=n_embedding)
         self.weight_oe = weight_oe
         self.weight_center = weight_center
-
-        self.radius = torch.nn.Parameter(torch.ones(size=(1,)))
-        self.radius.requires_grad = False
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
@@ -62,35 +57,38 @@ class MCHAD(LightningModule):
         known = is_known(y)
         embedding = self.forward(x)
 
-        distmat = self.center_loss.calculate_distances(embedding)
+        dists = self.center_loss.calculate_distances(embedding)
 
         if known.any():
-            loss_center = self.center_loss(distmat[known], y[known])
+            loss_center = self.center_loss(embedding[known], y[known])
 
             # calculates softmin
-            loss_nll = self.ce_loss(-distmat[known], y[known])
+            loss_nll = self.ce_loss(-dists[known], y[known])
         else:
             loss_nll = 0
             loss_center = 0
 
-        if (~known).any():
+        if ~known.any():
             # will give squared distance
-
-            d = (self.radius - distmat[~known]).pow(2).relu()
-            loss_out = d.sum(dim=1).mean()
+            loss_out = (1 / self.center_loss.calculate_distances(embedding[~known])).sum(dim=1).sum()
         else:
             loss_out = 0
 
-        preds = torch.argmin(distmat, dim=1)
+        preds = torch.argmin(dists, dim=1)
 
-        return loss_center, loss_nll, loss_out, preds, distmat, y, embedding
+        return loss_center, loss_nll, loss_out, preds, dists, y, embedding
 
     def training_step(self, batch: Any, batch_idx: int, **kwargs):
-        if type(batch) is list:
-            batch = torch.cat([b[0] for b in batch]), torch.cat([b[1] for b in batch])
+        # if type(batch) is list:
+        #     batch = torch.cat([b[0] for b in batch]), torch.cat([b[1] for b in batch])
 
         loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(batch)
         x, y = batch
+
+        # if batch_idx > 1 and batch_idx % 1000 == 0:
+        #     x, y = batch
+        #     # myutils.get_tb_writer(self).add_images("image/train", x, global_step=self.global_step)
+        #     myutils.log_weight_hists(self)
 
         loss = self.weight_center * loss_center + loss_nll + self.weight_oe * loss_out
 
@@ -99,21 +97,24 @@ class MCHAD(LightningModule):
         self.log(name="Loss/loss_out/train", value=loss_out, on_step=True)
 
         # NOTE: we treat the negative distance as logits
-        return {"loss": loss, "preds": preds, "targets": targets, "dists": dists,
+        return {"loss": loss, "preds": preds, "targets": targets, "logits": -dists, "dists": dists,
                 "embedding": embedding.cpu(), "points": x.cpu()}
 
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
         targets = collect_outputs(outputs, "targets")
         preds = collect_outputs(outputs, "preds")
+        logits = collect_outputs(outputs, "logits")
         dists = collect_outputs(outputs, "dists")
         embedding = collect_outputs(outputs, "embedding")
         images = collect_outputs(outputs, "points")
 
-        log_classification_metrics(self, "train", targets, preds, -dists)
+        log_classification_metrics(self, "train", targets, preds, logits)
         save_embeddings(self, dists, embedding, images, targets, tag="train")
 
+
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
+
         loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(batch)
         loss = self.weight_center * loss_center + loss_nll + self.weight_oe * loss_out
         x, y = batch
@@ -135,12 +136,13 @@ class MCHAD(LightningModule):
     def validation_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
         preds = collect_outputs(outputs, "preds")
+        logits = collect_outputs(outputs, "logits")
         dists = collect_outputs(outputs, "dists")
         embedding = collect_outputs(outputs, "embedding")
         images = collect_outputs(outputs, "points")
 
         # log val metrics
-        log_classification_metrics(self, "val", targets, preds, -dists)
+        log_classification_metrics(self, "val", targets, preds, logits)
         save_embeddings(self, dists, embedding, images, targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
@@ -155,12 +157,13 @@ class MCHAD(LightningModule):
     def test_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
         preds = collect_outputs(outputs, "preds")
+        logits = collect_outputs(outputs, "logits")
         dists = collect_outputs(outputs, "dists")
         embedding = collect_outputs(outputs, "embedding")
         images = collect_outputs(outputs, "points")
 
         # log val metrics
-        log_classification_metrics(self, "test", targets, preds, -dists)
+        log_classification_metrics(self, "test", targets, preds, logits)
         save_embeddings(self, dists, embedding, images, targets, tag=f"test-{self._test_epoch}")
         self._test_epoch += 1
 
@@ -183,99 +186,7 @@ class MCHAD(LightningModule):
         # TODO: make configurable
         sched = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer=opti,
-            T_0=20
+            T_0=10
         )
 
         return [opti], [sched]
-
-
-class MCHADLoss(nn.Module):
-    """
-    Multi Class Hypersphere Anomaly Detection Loss
-
-    :param n_classes: number of classes.
-    :param n_embedding: feature dimension.
-    :param magnitude: magnitude of
-
-    :see Implementation: https://github.com/KaiyangZhou/pytorch-center-loss
-    :see Paper: https://ydwen.github.io/papers/WenECCV16.pdf
-    """
-
-    def __init__(self, n_classes, n_embedding, magnitude=1, fixed=False):
-        super(MCHADLoss, self).__init__()
-        self.num_classes = n_classes
-        self.feat_dim = n_embedding
-        self.magnitude = magnitude
-
-        self.centers = nn.Parameter(torch.randn(self.num_classes, self.feat_dim))
-        if fixed:
-            self.centers.requires_grad = False
-
-        # In the published code, they initialize centers randomly.
-        # This, however, is not a good idea if the loss is used without an additional inter-class-discriminability term
-        self._init_centers()
-
-    def _init_centers(self):
-        if self.num_classes == self.feat_dim:
-            torch.nn.init.eye_(self.centers)
-
-            if not self.centers.requires_grad:
-                self.centers.mul_(self.magnitude)
-
-            # Orthogonal could also be a good option. this can also be used if the embedding dimensionality is
-            # different then the number of classes
-            # torch.nn.init.orthogonal_(self.centers, gain=10)
-        else:
-            torch.nn.init.normal_(self.centers)
-
-            if self.magnitude != 1:
-                log.warning(f"Not applying magnitude parameter.")
-
-    def forward(self, distmat, labels) -> torch.Tensor:
-        """
-        :param: x: feature matrix with shape (batch_size, feat_dim).
-        :param labels: ground truth labels with shape (batch_size).
-        """
-        # distmat = self.pairwise_distances(x, self.centers)
-
-        classes = torch.arange(self.num_classes).long().to(distmat.device)
-        labels = labels.unsqueeze(1).expand(distmat.size(0), self.num_classes)
-        mask = labels.eq(classes.expand(distmat.size(0), self.num_classes))
-
-        dist = distmat * mask.float()
-        loss = dist.clamp(min=1e-12, max=1e+12).sum() / distmat.size(0)
-
-        return loss
-
-    def calculate_distances(self, embeddings: torch.Tensor):
-        return self.pairwise_distances(embeddings, self.centers)
-
-    @staticmethod
-    def pairwise_distances(x, y=None):
-        '''
-        Input: x is a Nxd matrix
-               y is an optional Mxd matirx
-        Output: dist is a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
-                if y is not given then use 'y=x'.
-
-        See https://discuss.pytorch.org/t/efficient-distance-matrix-computation/9065/3
-
-        i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
-        '''
-        x_norm = (x ** 2).sum(1).view(-1, 1)
-        if y is not None:
-            y_t = torch.transpose(y, 0, 1)
-            y_norm = (y ** 2).sum(1).view(1, -1)
-        else:
-            y_t = torch.transpose(x, 0, 1)
-            y_norm = x_norm.view(1, -1)
-
-        dist = x_norm + y_norm - 2.0 * torch.mm(x, y_t)
-        # Ensure diagonal is zero if x=y
-        # if y is None:
-        #     dist = dist - torch.diag(dist.diag)
-        return torch.clamp(dist, 0.0, np.inf)
-
-    def predict(self, embeddings):
-        distances = self.calculate_distances(embeddings)
-        return nn.functional.softmin(distances, dim=1)

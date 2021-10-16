@@ -6,6 +6,7 @@ from pytorch_lightning import LightningModule
 import hydra
 
 import src.utils.mine as myutils
+from src.utils.mine import save_embeddings, collect_outputs
 from src.osr.utils import is_known
 from src.utils.metrics import log_classification_metrics
 from src.utils.mine import create_metadata
@@ -81,12 +82,12 @@ class IIModel(LightningModule):
 
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
-        targets = self._collect_outputs(outputs, "targets")
-        preds = self._collect_outputs(outputs, "preds")
-        logits = self._collect_outputs(outputs, "logits")
-        dists = self._collect_outputs(outputs, "dists")
-        embedding = self._collect_outputs(outputs, "embedding")
-        images = self._collect_outputs(outputs, "points")
+        targets = collect_outputs(outputs, "targets")
+        preds = collect_outputs(outputs, "preds")
+        logits = collect_outputs(outputs, "logits")
+        dists = collect_outputs(outputs, "dists")
+        embedding = collect_outputs(outputs, "embedding")
+        images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, logits)
         self._save_embeddings(dists, embedding, images, targets, tag="train")
@@ -149,16 +150,16 @@ class IIModel(LightningModule):
             return torch.cat([output[key] for output in outputs])
 
     def validation_epoch_end(self, outputs: List[Any]):
-        targets = self._collect_outputs(outputs, "targets")
-        preds = self._collect_outputs(outputs, "preds")
-        logits = self._collect_outputs(outputs, "logits")
-        dists = self._collect_outputs(outputs, "dists")
-        embedding = self._collect_outputs(outputs, "embedding")
-        images = self._collect_outputs(outputs, "points")
+        targets = collect_outputs(outputs, "targets")
+        preds = collect_outputs(outputs, "preds")
+        logits = collect_outputs(outputs, "logits")
+        dists = collect_outputs(outputs, "dists")
+        embedding = collect_outputs(outputs, "embedding")
+        images = collect_outputs(outputs, "points")
 
         # log val metrics
         log_classification_metrics(self, "val", targets, preds, logits)
-        self._save_embeddings(dists, embedding, images, targets, tag="val")
+        save_embeddings(self, dists, embedding, images, targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         intra_spread, inter_separation, preds, dists, y, embedding = self.step(batch)
@@ -171,12 +172,12 @@ class IIModel(LightningModule):
                 "embedding": embedding.cpu(), "points": x.cpu()}
 
     def test_epoch_end(self, outputs: List[Any]):
-        targets = self._collect_outputs(outputs, "targets")
-        preds = self._collect_outputs(outputs, "preds")
-        logits = self._collect_outputs(outputs, "logits")
-        dists = self._collect_outputs(outputs, "dists")
-        embedding = self._collect_outputs(outputs, "embedding")
-        images = self._collect_outputs(outputs, "points")
+        targets = collect_outputs(outputs, "targets")
+        preds = collect_outputs(outputs, "preds")
+        logits = collect_outputs(outputs, "logits")
+        dists = collect_outputs(outputs, "dists")
+        embedding = collect_outputs(outputs, "embedding")
+        images = collect_outputs(outputs, "points")
 
         # log val metrics
         log_classification_metrics(self, "test", targets, preds, logits)

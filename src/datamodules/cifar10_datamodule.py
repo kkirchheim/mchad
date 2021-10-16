@@ -42,14 +42,17 @@ class CIFAR10DataModule(MyBaseDataModule):
         train_set = CIFAR10(
             self.data_dir,
             train=True,
-            transform=self.transforms,
+            transform=self.train_trans,
             target_transform=self.target_transform
         )
-        self.data_train, self.data_val = random_split(train_set, self.train_val_split, generator=self.split_generator)
+        # self.data_train, self.data_val = random_split(train_set, self.train_val_split, generator=self.split_generator)
+        self.data_train = train_set
 
         self.data_test = CIFAR10(
             self.data_dir,
             train=False,
-            transform=self.transforms,
+            transform=self.test_trans,
             target_transform=self.target_transform
         )
+
+        self.data_val = self.data_test

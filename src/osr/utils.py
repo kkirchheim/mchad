@@ -99,15 +99,16 @@ def torch_get_distances(centers, embeddings):
     """
     TODO: this can be done way more efficiently
     """
-
-    n_instances = embeddings.shape[0]
-    n_centers = centers.shape[0]
-    distances = torch.empty((n_instances, n_centers)).to(embeddings.device)
-
-    for clazz in torch.arange(n_centers):
-        distances[:, clazz] = torch.norm(embeddings - centers[clazz], dim=1, p=2)
-
-    return distances
+    return torch.cdist(centers, embeddings)
+    #
+    # n_instances = embeddings.shape[0]
+    # n_centers = centers.shape[0]
+    # distances = torch.empty((n_instances, n_centers)).to(embeddings.device)
+    #
+    # return torch.cdist(centers, embeddings)
+    # for clazz in torch.arange(n_centers):
+    #     distances[:, clazz] = torch.norm(embeddings - centers[clazz], dim=1, p=2)
+    # return distances
 
 
 def optimize_temperature(logits: torch.Tensor, y, init=1, steps=1000, device="cpu"):

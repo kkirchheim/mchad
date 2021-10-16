@@ -2,8 +2,9 @@ import logging
 
 import torch
 import torch.nn as nn
+import numpy as np
 
-from osr.utils import torch_get_squared_distances
+from src.osr.utils import torch_get_squared_distances
 
 log = logging.getLogger(__name__)
 
@@ -69,9 +70,41 @@ class CenterLoss(nn.Module):
 
         return loss
 
-    def calculate_distances(self, embeddings):
-        distances = torch_get_squared_distances(self.centers, embeddings)
-        return distances
+    def calculate_distances(self, embeddings: torch.Tensor):
+        # pdist = nn.PairwiseDistance(p=2)
+        a = self.centers
+        b = embeddings
+        return self.pairwise_distances(b, a)
+        # return pdist(a, b).pow(2)
+        # return torch.cdist(self.centers, embeddings).pow(2)
+        # distances = torch_get_squared_distances(self.centers, embeddings)
+        # return distances
+
+    @staticmethod
+    def pairwise_distances(x, y=None):
+        '''
+        Input: x is a Nxd matrix
+               y is an optional Mxd matirx
+        Output: dist is a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
+                if y is not given then use 'y=x'.
+
+        See https://discuss.pytorch.org/t/efficient-distance-matrix-computation/9065/3
+
+        i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
+        '''
+        x_norm = (x ** 2).sum(1).view(-1, 1)
+        if y is not None:
+            y_t = torch.transpose(y, 0, 1)
+            y_norm = (y ** 2).sum(1).view(1, -1)
+        else:
+            y_t = torch.transpose(x, 0, 1)
+            y_norm = x_norm.view(1, -1)
+
+        dist = x_norm + y_norm - 2.0 * torch.mm(x, y_t)
+        # Ensure diagonal is zero if x=y
+        # if y is None:
+        #     dist = dist - torch.diag(dist.diag)
+        return torch.clamp(dist, 0.0, np.inf)
 
     def predict(self, embeddings):
         distances = self.calculate_distances(embeddings)

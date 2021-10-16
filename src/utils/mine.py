@@ -13,7 +13,6 @@ from os.path import join
 
 import numpy as np
 import pytorch_lightning as pl
-import pytorch_lightning.metrics.functional as metrics
 import torch
 import torch.optim.lr_scheduler as scheduler
 from omegaconf import DictConfig
@@ -22,9 +21,9 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers.base import LoggerCollection
 from torch.utils.data import Subset
 from collections import defaultdict
+from typing import List, Any
 
-from src.osr.utils import is_known, is_unknown, contains_known, contains_unknown, contains_known_and_unknown, \
-    is_known_unknown, is_unknown_unknown
+from src.osr.utils import is_known, is_unknown, contains_known, contains_unknown
 
 log = logging.getLogger(__name__)
 
@@ -706,3 +705,53 @@ class TensorBuffer:
         torch.save(d, path)
         return self
 
+
+##################################################
+
+def collect_outputs(outputs: List[Any], key) -> torch.Tensor:
+    """
+    Collect outputs for model with multiple dataloaders
+    """
+    if type(outputs) is list:
+        # multiple data loaders
+        # i have no idea when which case hits ...
+        if type(outputs[0]) is list:
+            if type(outputs[0][0]) is dict:
+                l = []
+                for output in outputs:
+                    l.extend([o[key] for o in output])
+            else:
+                l = []
+                for output in outputs:
+                    l.extend([o for o in output])
+            return torch.cat(l)
+        elif type(outputs[0]) is dict:
+            return torch.cat([output[key] for output in outputs])
+        else:
+            l = []
+            for output in outputs:
+                l.extend([o for o in output])
+            return torch.cat(l)
+    else:
+        return torch.cat([output[key] for output in outputs])
+
+
+def save_embeddings(pl_model, dists, embedding, images, targets, centers=None, tag="default", limit=5000):
+    # limit number of saved entries so tensorboard does not crash because of too many sprites
+    log.info(f"Saving embeddings")
+
+    indexes = torch.randperm(len(images))[:limit]
+    header, data = create_metadata(
+        is_known(targets[indexes]),
+        targets[indexes],
+        distance=torch.min(dists[indexes], dim=1)[0],
+        centers=centers
+    )
+
+    get_tb_writer(pl_model).add_embedding(
+        embedding[indexes],
+        metadata=data,
+        global_step=pl_model.global_step,
+        metadata_header=header,
+        label_img=images[indexes],
+        tag=tag)

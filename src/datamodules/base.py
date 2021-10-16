@@ -11,6 +11,17 @@ from src.osr.ossim import TargetMapping
 log = logging.getLogger(__name__)
 
 
+class ToRBG(object):
+    """
+    Convert Image to RGB, if it is not already.
+    """
+
+    def __call__(self, x):
+        if x.mode != "RGB":
+            return x.convert("RGB")
+        return x
+
+
 class MyBaseDataModule(LightningDataModule):
     """
 
@@ -26,7 +37,8 @@ class MyBaseDataModule(LightningDataModule):
         ood_classes_val: int = 0,
         ood_classes_test: int = 0,
         height: int = 32,
-        width: int = 32
+        width: int = 32,
+        normalize: dict = None
     ):
         super().__init__()
         self.batch_size = batch_size
@@ -36,12 +48,27 @@ class MyBaseDataModule(LightningDataModule):
         self.data_split_seed = data_split_seed
 
         # TODO: we could add more data augmentation at this point
-        self.transforms = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                transforms.Resize(size=(height, width))
-            ]
-        )
+        train_trans = [
+            ToRBG(),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(32, padding=4),
+            transforms.ToTensor(),
+            transforms.Resize(size=(height, width))
+        ]
+
+        test_trans = [
+            ToRBG(),
+            transforms.ToTensor(),
+            transforms.Resize(size=(height, width))
+        ]
+
+        if normalize:
+            log.info(f"Adding normalization")
+            train_trans.append(transforms.Normalize(normalize["mean"], normalize["std"]))
+            test_trans.append(transforms.Normalize(normalize["mean"], normalize["std"]))
+
+        self.train_trans = transforms.Compose(train_trans)
+        self.test_trans = transforms.Compose(test_trans)
 
         self.target_transform = None
 
@@ -83,6 +110,9 @@ class MyBaseDataModule(LightningDataModule):
             log.info(f"Not initializing data ordering seed")
 
     def train_dataloader(self):
+        if not self.data_train:
+            return None
+
         return DataLoader(
             dataset=self.data_train,
             batch_size=self.batch_size,
@@ -93,6 +123,9 @@ class MyBaseDataModule(LightningDataModule):
         )
 
     def val_dataloader(self):
+        if not self.data_val:
+            return None
+
         return DataLoader(
             dataset=self.data_val,
             batch_size=self.batch_size,
@@ -102,7 +135,9 @@ class MyBaseDataModule(LightningDataModule):
         )
 
     def test_dataloader(self):
-        # NOTE: we could also return multiple loaders ...
+        if not self.data_test:
+            return None
+
         return DataLoader(
             dataset=self.data_test,
             batch_size=self.batch_size,
