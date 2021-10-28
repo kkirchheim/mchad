@@ -5,7 +5,7 @@ defaults:
   - override /model: null
   - override /datamodule: cifar10-oe
   - override /callbacks: null
-  - override /logger: null
+  - override /logger: default
   - override /testmodules: cifar10
 
 # we override default configurations with nulls to prevent them from loading at all
@@ -59,64 +59,12 @@ callbacks:
     verbose: False
     dirpath: "checkpoints/"
     filename: "{epoch:02d}"
-#  early_stopping:
-#    _target_: pytorch_lightning.callbacks.EarlyStopping
-#    monitor: "Accuracy/val" # name of the logged metric which determines when model is improving
-#    patience: 100 # how many epochs of not improving until training stops
-#    mode: "max" # can be "max" or "min"
-#    min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
   lr_monitor:
     _target_: pytorch_lightning.callbacks.LearningRateMonitor
 
-  #########################
   distance:
     _target_: src.callbacks.distance.DistanceThresholding
     use_in_val: True
     use_in_test: True
-#  softmax:
-#    _target_: src.callbacks.softmax.SoftmaxThresholding
-#    use_in_val: True
-#    use_in_test: True
-#  energy:
-#    _target_: src.callbacks.energy.EnergyBased
-#    temperature: 1
-#    use_in_val: True
-#    use_in_test: True
-#  mcd:
-#    _target_: src.callbacks.mcd.MonteCarloDropout
-#    num_classes: 10
-#    rounds: 30
-#    use_in_val: False
-#    use_in_test: False
-#  openmax:
-#    _target_: src.callbacks.openmax.OpenMax
-#    tailsize: 3
-#    alpha: 3
-#    euclid_weight: 0
-#    use_in_val: False
-#    use_in_test: True
-#  odin:
-#    _target_: src.callbacks.odin.ODIN
-#    eps: 0.02
-#    t: 1000
-#    use_in_val: False
-#    use_in_test: True
-#  tscaling:
-#    _target_: src.callbacks.tscaling.TemperatureScaling
-#    temperature: 1000
-#    use_in_val: True
-#    use_in_test: True
 
 
-logger:
-  # https://www.tensorflow.org/tensorboard/
-  tensorboard:
-    _target_: pytorch_lightning.loggers.tensorboard.TensorBoardLogger
-    save_dir: "."
-    name: "tb"
-    version: null
-    log_graph: False
-    default_hp_metric: True
-    prefix: ""
-  csv:
-    save_dir: "."

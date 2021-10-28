@@ -5,7 +5,7 @@ import numpy as np
 from .base import MyBaseDataModule
 import logging
 
-from src.osr.ossim import TargetMapping
+from osr.ossim import TargetMapping
 
 
 log = logging.getLogger(__name__)
@@ -55,11 +55,20 @@ class CIFAR100DataModule(MyBaseDataModule):
         """Load data. Set variables: self.data_train, self.data_val, self.data_test."""
         log.info(f"Datamodule setup")
         super().setup()
-
-        trainset = CIFAR100(self.data_dir, train=True, transform=self.transforms, target_transform=self.mapping)
-        testset = CIFAR100(self.data_dir, train=False, transform=self.transforms, target_transform=self.mapping)
-        dataset = ConcatDataset(datasets=[trainset, testset])
-
-        self.data_train, self.data_val, self.data_test = random_split(
-            dataset, self.train_val_test_split
+        train_set = CIFAR100(
+            self.data_dir,
+            train=True,
+            transform=self.train_trans,
+            target_transform=self.target_transform
         )
+        # self.data_train, self.data_val = random_split(train_set, self.train_val_split, generator=self.split_generator)
+        self.data_train = train_set
+
+        self.data_test = CIFAR100(
+            self.data_dir,
+            train=False,
+            transform=self.test_trans,
+            target_transform=self.target_transform
+        )
+
+        self.data_val = self.data_test

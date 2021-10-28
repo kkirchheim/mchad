@@ -3,44 +3,48 @@
 defaults:
   - override /trainer: null # override trainer to null so it's not loaded from main config defaults...
   - override /model: null
-  - override /datamodule: cifar10
+  - override /datamodule: cifar100-oe
   - override /callbacks: null
   - override /logger: default
-  - override /testmodules: cifar10
+  - override /testmodules: cifar100
 
 # we override default configurations with nulls to prevent them from loading at all
 # instead we define all modules and their paths directly in this config,
 # so everything is stored in one place
 
 seed: 12345
-
-# TODO: not all operations are implemented as deterministic
-deterministic: False
+deterministic: True
+debug: True
+ignore_warnings: True
 
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
   min_epochs: 20
   max_epochs: 20
-  # limit_train_batches: 400
+  limit_train_batches: 784 # 392 batches x2
+  limit_val_batches: 80 # 392 batches x2
   #  gradient_clip_val: 0.5
   #  accumulate_grad_batches: 2
   weights_summary: null
   # resume_from_checkpoint: ${work_dir}/last.ckpt
 
 model:
-  _target_: src.models.CAC
+  _target_: src.models.MCHAD
   lr: 0.001
   weight_decay: 0.00005
   # pretrained weights?
   pretrained: null
-  weight_anchor: 1.0
-  magnitude: 1.0
-  n_classes: 10
+  n_classes: 100
+  n_embedding: 64
+  radius: 1.0
+  weight_center: 0.5
+  weight_oe: 0.1
+#  nesterov: True
+#  momentum: 0.9
   backbone:
-    # _target_: torchvision.models.resnet.wide_resnet101_2
     _target_: src.models.modules.wrn.WideResNet
-    num_classes: 10
+    num_classes: 64
     widen_factor: 2
     depth: 40
     drop_rate: 0.3
@@ -48,7 +52,7 @@ model:
 callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    monitor: "Accuracy/val" # name of the logged metric which determines when model is improving
+    monitor: "Distance/OSR/AUROC/val" # name of the logged metric which determines when model is improving
     save_top_k: 1 # save k best models (determined by above metric)
     save_last: True # additionaly always save model from last epoch
     mode: "max" # can be "max" or "min"
@@ -62,7 +66,5 @@ callbacks:
     _target_: src.callbacks.distance.DistanceThresholding
     use_in_val: True
     use_in_test: True
-  cac:
-    _target_: src.callbacks.cac.CACScorer
-    use_in_val: True
-    use_in_test: True
+
+

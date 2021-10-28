@@ -5,18 +5,20 @@ import torch
 from pytorch_lightning import LightningModule
 import hydra
 
-import src.utils.mine as myutils
+from osr.utils import is_known
+from osr.nn.loss import IILoss
+
 from src.utils.mine import save_embeddings, collect_outputs
-from src.osr.utils import is_known
 from src.utils.metrics import log_classification_metrics
-from src.utils.mine import create_metadata
-from src.osr.nn.loss import IILoss
 
 log = logging.getLogger(__name__)
 
 
 class IIModel(LightningModule):
     """
+    Model based on *Learning a neural network based representation for open set recognition*.
+
+    :see Paper: https://arxiv.org/pdf/1802.04365.pdf
     """
 
     def __init__(
@@ -26,7 +28,7 @@ class IIModel(LightningModule):
             backbone: dict = None,
             n_classes=10,
             n_embedding=10,
-            magnitude=1,
+            weight_sep=1.0, # default, as in the original paper
             **kwargs
     ):
         super().__init__()
@@ -65,10 +67,6 @@ class IIModel(LightningModule):
         intra_spread, inter_separation, preds, dists, y, embedding = self.step(batch)
 
         x, y = batch
-        if batch_idx > 1 and batch_idx % 1000 == 0:
-            x, y = batch
-            # myutils.get_tb_writer(self).add_images("image/train", x, global_step=self.global_step)
-            myutils.log_weight_hists(self)
 
         # NOTE: weighting is not in the original paper
         loss = intra_spread + 100 * inter_separation
@@ -90,27 +88,7 @@ class IIModel(LightningModule):
         images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, logits)
-        self._save_embeddings(dists, embedding, images, targets, tag="train")
-
-    def _save_embeddings(self, dists, embedding, images, targets, tag="default", limit=5000):
-        # limit number of saved entries so tensorboard does not crash because of too many sprites
-        log.info(f"Saving embeddings")
-
-        indexes = torch.randperm(len(images))[:limit]
-        header, data = create_metadata(
-            is_known(targets[indexes]),
-            targets[indexes],
-            distance=torch.min(dists[indexes], dim=1)[0],
-            centers=self.ii_loss.centers
-        )
-
-        myutils.get_tb_writer(self).add_embedding(
-            embedding[indexes],
-            metadata=data,
-            global_step=self.global_step,
-            metadata_header=header,
-            label_img=images[indexes],
-            tag=tag)
+        save_embeddings(self, dists, embedding, images, targets, tag="train")
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         intra_spread, inter_separation, preds, dists, y, embedding = self.step(batch)
@@ -120,34 +98,10 @@ class IIModel(LightningModule):
         self.log(name="Loss/intra_spread/val", value=intra_spread)
         self.log(name="Loss/inter_separation/val", value=inter_separation)
 
-        if batch_idx > 1 and batch_idx % 1000 == 0:
-            # x, y = batch
-            # myutils.get_tb_writer(self).add_images("image/val", x, global_step=self.global_step)
-            myutils.log_weight_hists(self)
-
         x, y = batch
         # NOTE: we treat the negative distance as logits
         return {"loss": loss, "preds": preds, "targets": y, "logits": -dists, "dists": dists,
                 "embedding": embedding.cpu(), "points": x.cpu()}
-
-    def _collect_outputs(self, outputs: List[Any], key) -> torch.Tensor:
-        if type(outputs) is list:
-            # multiple data loaders
-            # i have no idea when which case hits ...
-            if type(outputs[0]) is list:
-                l = []
-                for output in outputs:
-                    l.extend([o for o in output])
-                return torch.cat(l)
-            elif type(outputs[0]) is dict:
-                return torch.cat([output[key] for output in outputs])
-            else:
-                l = []
-                for output in outputs:
-                    l.extend([o for o in output])
-                return torch.cat(l)
-        else:
-            return torch.cat([output[key] for output in outputs])
 
     def validation_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
@@ -181,7 +135,7 @@ class IIModel(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "test", targets, preds, logits)
-        self._save_embeddings(dists, embedding, images, targets, tag=f"test-{self._test_epoch}")
+        save_embeddings(self, dists, embedding, images, targets, tag=f"test-{self._test_epoch}")
         self._test_epoch += 1
 
     def configure_optimizers(self):
@@ -199,7 +153,7 @@ class IIModel(LightningModule):
         # TODO: make configurable
         sched = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer=opti,
-            T_0=100
+            T_0=20
         )
 
         return [opti], [sched]

@@ -23,7 +23,7 @@ from torch.utils.data import Subset
 from collections import defaultdict
 from typing import List, Any
 
-from src.osr.utils import is_known, is_unknown, contains_known, contains_unknown
+from osr.utils import is_known, is_unknown, contains_known, contains_unknown
 
 log = logging.getLogger(__name__)
 
@@ -211,7 +211,7 @@ def get_dumpfile(model: pl.LightningModule, stage: str):
 # Helpers for logging to tensorboard/loggers
 ###################################################
 
-def get_tb_writer(obj):
+def find_tensorboard(obj):
     """
     Helper function to get the tensorboard for a module from a list of its loggers
     """
@@ -250,7 +250,7 @@ def log_weight_hists(model: pl.LightningModule):
         return
 
     for name, param in model.named_parameters():
-        get_tb_writer(model.logger).add_histogram(
+        find_tensorboard(model.logger).add_histogram(
             tag=f"weights/{name}",
             values=param,
             global_step=model.global_step
@@ -263,7 +263,7 @@ def log_grad_hists(model: pl.LightningModule):
 
     for name, param in model.named_parameters():
         if param.requires_grad and param.grad is not None:
-            get_tb_writer(model.logger).add_histogram(
+            find_tensorboard(model.logger).add_histogram(
                 tag=f"gradients/{name}",
                 values=param.grad,
                 global_step=model.global_step
@@ -275,7 +275,7 @@ def log_score_histogram(model, stage, score, y, y_hat, method=None):
     Save histograms of confidence scores
     """
 
-    writer = get_tb_writer(model)
+    writer = find_tensorboard(model)
     epoch = model.current_epoch
 
     if writer:
@@ -308,244 +308,6 @@ def log_score_histogram(model, stage, score, y, y_hat, method=None):
                 tag=f"{prefix}/unknown",
                 values=score[unknown],
                 global_step=epoch)
-
-#
-# def log_error_detection_metrics(model: pl.LightningModule, score, stage, y, y_hat, method=None, prog_bar=False):
-#     """
-#     Log error-dectection metrics, AUROC and AUPR
-#
-#     Error Detection Refers to the ability to discriminate correctly classified and misclassified images.
-#     It is unrelated to OOD/OSR, as it does not consider samples from unknown classes.
-#     """
-#     if not contains_known(y):
-#         log.warning("Passed data does not contain known samples. Can not calculate error Metrics.")
-#
-#         if not method:
-#             model.log(f"AUROC/Error/{stage}", np.nan)
-#             model.log(f"AUPR-IN/Error/{stage}", np.nan)
-#             model.log(f"AUPR-OUT/Error/{stage}", np.nan)
-#             model.log(f"MeanConf/Error/correct/{stage}", np.nan)
-#             model.log(f"MeanConf/Error/incorrect/{stage}", np.nan)
-#         else:
-#             model.log(f"AUROC/Error/{stage}/{method}", np.nan)
-#             model.log(f"AUPR-IN/Error/{stage}/{method}", np.nan)
-#             model.log(f"AUPR-OUT/Error/{stage}/{method}", np.nan)
-#             model.log(f"MeanConf/Error/correct/{stage}/{method}", np.nan)
-#             model.log(f"MeanConf/Error/incorrect/{stage}/{method}", np.nan)
-#         return
-#
-#     correct_class = (y == y_hat).long()
-#     known = is_known(y)
-#
-#     try:
-#         auroc = metrics.auroc(score[known], correct_class[known])
-#
-#         # AUPR IN
-#         precision, recall, thresholds = metrics.precision_recall_curve(score[known], correct_class[known], pos_label=1)
-#         aupr_in = metrics.auc(recall, precision)
-#
-#         # AUPR OUT
-#         precision, recall, thresholds = metrics.precision_recall_curve(-score[known], 1 - correct_class[known], pos_label=1)
-#         aupr_out = metrics.auc(recall, precision)
-#
-#         if not method:
-#             model.log(f"AUROC/Error/{stage}", auroc, prog_bar=prog_bar)
-#             model.log(f"AUPR-IN/Error/{stage}", aupr_in, prog_bar=prog_bar)
-#             model.log(f"AUPR-OUT/Error/{stage}", aupr_out, prog_bar=prog_bar)
-#             model.log(f"MeanConf/Error/correct/{stage}", score[known & (y == y_hat)].mean(), prog_bar=prog_bar)
-#             model.log(f"MeanConf/Error/incorrect/{stage}", score[known & ~(y == y_hat)].mean(), prog_bar=prog_bar)
-#         else:
-#             model.log(f"AUROC/Error/{stage}/{method}", auroc, prog_bar=prog_bar)
-#             model.log(f"AUPR-IN/Error/{stage}/{method}", aupr_in, prog_bar=prog_bar)
-#             model.log(f"AUPR-OUT/Error/{stage}/{method}", aupr_out, prog_bar=prog_bar)
-#             model.log(f"MeanConf/Error/correct/{stage}/{method}", score[known & (y == y_hat)].mean(), prog_bar=prog_bar)
-#             model.log(f"MeanConf/Error/incorrect/{stage}/{method}", score[known & ~(y == y_hat)].mean(), prog_bar=prog_bar)
-#
-#     except Exception as e:
-#         log.warning(e)
-#
-#
-# def log_uncertainty_metrics(model, score, stage, y, y_hat, method=None, prog_bar=False):
-#     """
-#     Log uncertainty metrics, AUROC and AUPR
-#
-#     Uncertainty refers to the ability to discriminate correctly classified images from
-#     unknown or misclassified images.
-#     """
-#     if not contains_known_and_unknown(y):
-#         log.warning("Passed data does not contain known and unknown samples. Can not calculate uncertainty Metrics.")
-#
-#         if method:
-#             model.log(f"AUROC/Uncertainty/{stage}/{method}", np.nan)
-#             model.log(f"AUPR-IN/Uncertainty/{stage}/{method}", np.nan)
-#             model.log(f"AUPR-OUT/Uncertainty/{stage}/{method}", np.nan)
-#         else:
-#             model.log(f"AUROC/Uncertainty/{stage}", np.nan)
-#             model.log(f"AUPR-IN/Uncertainty/{stage}", np.nan)
-#             model.log(f"AUPR-OUT/Uncertainty/{stage}", np.nan)
-#
-#     else:
-#         try:
-#             known_and_correct = (is_known(y) & (y == y_hat))
-#             auroc = metrics.auroc(score, known_and_correct)
-#
-#             # AUPR IN
-#             precision, recall, thresholds = metrics.precision_recall_curve(
-#                 score, known_and_correct.long(), pos_label=1)
-#             aupr_in = metrics.auc(recall, precision)
-#
-#             # AUPR OUT
-#             precision, recall, thresholds = metrics.precision_recall_curve(
-#                 -score, 1-known_and_correct.long(), pos_label=1)
-#
-#             aupr_out = metrics.auc(recall, precision)
-#
-#             if not method:
-#                 model.log(f"AUROC/Uncertainty/{stage}", auroc, prog_bar=prog_bar)
-#                 model.log(f"AUPR-IN/Uncertainty/{stage}", aupr_in, prog_bar=prog_bar)
-#                 model.log(f"AUPR-OUT/Uncertainty/{stage}", aupr_out, prog_bar=prog_bar)
-#             else:
-#                 model.log(f"AUROC/Uncertainty/{stage}/{method}", auroc, prog_bar=prog_bar)
-#                 model.log(f"AUPR-IN/Uncertainty/{stage}/{method}", aupr_in, prog_bar=prog_bar)
-#                 model.log(f"AUPR-OUT/Uncertainty/{stage}/{method}", aupr_out, prog_bar=prog_bar)
-#
-#         except Exception as e:
-#             log.warning(e)
-#
-#     known = is_known(y)
-#
-#     if contains_known(y):
-#         if not method:
-#             model.log(f"MeanConf/Uncertainty/known/{stage}", score[known].mean(), prog_bar=prog_bar)
-#         else:
-#             model.log(f"MeanConf/Uncertainty/known/{stage}/{method}", score[known].mean(), prog_bar=prog_bar)
-#
-#     if contains_unknown(y):
-#         if not method:
-#             model.log(f"MeanConf/Uncertainty/unknown/{stage}", score[~known].mean(), prog_bar=prog_bar)
-#         else:
-#             model.log(f"MeanConf/Uncertainty/unknown/{stage}/{method}", score[~known].mean(), prog_bar=prog_bar)
-#
-#
-# def log_classification_metrics(model: pl.LightningModule, stage, y, y_hat, logits=None):
-#     """
-#
-#     """
-#     if contains_known(y):
-#         known_idx = is_known(y)
-#         acc = metrics.accuracy(y_hat[known_idx], y[known_idx], num_classes=model.num_classes)
-#         model.log(f"Accuracy/{stage}", acc, prog_bar=True)
-#
-#         if logits is not None:
-#             loss = model.loss(logits[known_idx], y[known_idx])
-#             model.log(f"Loss/{stage}", loss, prog_bar=True)
-#     else:
-#         log.error("Passed data does not contain known and unknown samples. Can not calculate OSR Metrics.")
-#
-#         model.log(f"Accuracy/{stage}", np.nan)
-#
-#         if logits is not None:
-#             model.log(f"Loss/{stage}", np.nan)
-#         return
-#
-#
-# def log_osr_metrics(model: pl.LightningModule, score, stage, y, method=None, prog_bar=False):
-#     """
-#     Log uncertainty metrics, AUROC and AUPR
-#
-#     Uncertainty refers to the ability to discriminate images of known from images of unknown classes.
-#     """
-#
-#     if not contains_known_and_unknown(y):
-#         log.error("Passed data does not contain known and unknown samples. Can not calculate OSR Metrics.")
-#
-#         if not method:
-#             model.log(f"AUROC/OSR/{stage}", np.nan)
-#             model.log(f"AUPR-IN/OSR/{stage}", np.nan)
-#             model.log(f"AUPR-OUT/OSR/{stage}", np.nan)
-#         else:
-#             model.log(f"AUROC/OSR/{stage}/{method}", np.nan)
-#             model.log(f"AUPR-IN/OSR/{stage}/{method}", np.nan)
-#             model.log(f"AUPR-OUT/OSR/{stage}/{method}", np.nan)
-#
-#     else:
-#
-#         known = is_known(y)
-#         known_unknown = is_known_unknown(y)
-#         unknown_unknown = is_unknown_unknown(y)
-#
-#         known_or_unknown_unknown = is_known(y) | is_unknown_unknown(y)
-#
-#         try:
-#             if unknown_unknown.any():
-#                 # see how good we are at distinguishing between known and unkown, but ignore
-#                 # known unknowns
-#                 scores = score[known_or_unknown_unknown]
-#                 labels = known[known_or_unknown_unknown].long()
-#                 auroc = metrics.auroc(scores, labels)
-#
-#                 # AUPR IN
-#                 # treat normal class as positive
-#                 precision, recall, thresholds = metrics.precision_recall_curve(scores, labels, pos_label=1)
-#                 aupr_in = metrics.auc(recall, precision)
-#
-#                 # AUPR OUT
-#                 # treat abnormal class as positive, as described by hendrycks
-#                 precision, recall, thresholds = metrics.precision_recall_curve(-scores, 1 - labels, pos_label=1)
-#                 aupr_out = metrics.auc(recall, precision)
-#
-#                 if not method:
-#                     model.log(f"AUROC/OSR/{stage}", auroc, prog_bar=prog_bar)
-#                     model.log(f"AUPR-IN/OSR/{stage}", aupr_in, prog_bar=prog_bar)
-#                     model.log(f"AUPR-OUT/OSR/{stage}", aupr_out, prog_bar=prog_bar)
-#                 else:
-#                     model.log(f"AUROC/OSR/{stage}/{method}", auroc, prog_bar=prog_bar)
-#                     model.log(f"AUPR-IN/OSR/{stage}/{method}", aupr_in, prog_bar=prog_bar)
-#                     model.log(f"AUPR-OUT/OSR/{stage}/{method}", aupr_out, prog_bar=prog_bar)
-#
-#             if known_unknown.any():
-#                 log.info(f"Found known unknown: {y[known_unknown].unique()}")
-#                 # see how good we are at distinguishing between known known and known unknowns
-#                 # this will only be done for methods that train on known unknown data, or if we include
-#                 # samples of known unknowns in the validation set
-#                 scores = score[known | known_unknown]
-#                 labels = known[known | known_unknown].long()
-#                 auroc = metrics.auroc(scores, labels)
-#
-#                 # AUPR IN
-#                 precision, recall, thresholds = metrics.precision_recall_curve(scores, labels, pos_label=1)
-#                 aupr_in = metrics.auc(recall, precision)
-#
-#                 # AUPR OUT
-#                 precision, recall, thresholds = metrics.precision_recall_curve(-scores, 1-labels, pos_label=1)
-#                 aupr_out = metrics.auc(recall, precision)
-#
-#                 if not method:
-#                     model.log(f"AUROC/OSR/{stage}/known", auroc, prog_bar=prog_bar)
-#                     model.log(f"AUPR-IN/OSR/{stage}/known", aupr_in, prog_bar=prog_bar)
-#                     model.log(f"AUPR-OUT/OSR/{stage}/known", aupr_out, prog_bar=prog_bar)
-#                 else:
-#                     model.log(f"AUROC/OSR/{stage}/{method}/known", auroc, prog_bar=prog_bar)
-#                     model.log(f"AUPR-IN/OSR/{stage}/{method}/known", aupr_in, prog_bar=prog_bar)
-#                     model.log(f"AUPR-OUT/OSR/{stage}/{method}/known", aupr_out, prog_bar=prog_bar)
-#         except Exception as e:
-#             log.error(f"Exception while updating metrics for method {method} in stage {stage}")
-#             log.exception(e)
-#
-#     known = is_known(y)
-#     # TODO: we have to handle known unknowns here
-#
-#     if contains_known(y):
-#         if not method:
-#             model.log(f"MeanConf/OSR/known/{stage}", score[known].mean(), prog_bar=prog_bar)
-#         else:
-#             model.log(f"MeanConf/OSR/known/{stage}/{method}", score[known].mean(), prog_bar=prog_bar)
-#
-#     if contains_unknown(y):
-#         if not method:
-#             model.log(f"MeanConf/OSR/unknown/{stage}", score[~known].mean(), prog_bar=prog_bar)
-#         else:
-#             model.log(f"MeanConf/OSR/unknown/{stage}/{method}", score[~known].mean(), prog_bar=prog_bar)
 
 
 def create_metadata(known, labels, distance=None, centers=None):
@@ -736,22 +498,22 @@ def collect_outputs(outputs: List[Any], key) -> torch.Tensor:
         return torch.cat([output[key] for output in outputs])
 
 
-def save_embeddings(pl_model, dists, embedding, images, targets, centers=None, tag="default", limit=5000):
+def save_embeddings(pl_model, dists=None, embedding=None, images=None, targets=None, centers=None, tag="default", limit=5000):
     # limit number of saved entries so tensorboard does not crash because of too many sprites
     log.info(f"Saving embeddings")
 
-    indexes = torch.randperm(len(images))[:limit]
+    indexes = torch.randperm(len(embedding))[:limit]
     header, data = create_metadata(
         is_known(targets[indexes]),
         targets[indexes],
-        distance=torch.min(dists[indexes], dim=1)[0],
+        distance=None if dists is None else torch.min(dists[indexes], dim=1)[0],
         centers=centers
     )
 
-    get_tb_writer(pl_model).add_embedding(
+    find_tensorboard(pl_model).add_embedding(
         embedding[indexes],
         metadata=data,
         global_step=pl_model.global_step,
         metadata_header=header,
-        label_img=images[indexes],
+        label_img=None if images is None else images[indexes],
         tag=tag)

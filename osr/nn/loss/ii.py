@@ -3,6 +3,8 @@ import logging
 import torch
 import torch.nn as nn
 from torch.nn import init
+import numpy as np
+
 
 import osr.utils
 
@@ -38,8 +40,8 @@ class IILoss(nn.Module):
         self.n_embedding = n_embedding
 
         # create buffer for centers. those buffers will be updated during training, and are fixed during evaluation
-        running_centers = torch.empty(size=(self.n_classes, self.n_embedding), requires_grad=False).double()
-        num_batches_tracked = torch.empty(size=(1,), requires_grad=False).double()
+        running_centers = torch.empty(size=(self.n_classes, self.n_embedding), requires_grad=False).float()
+        num_batches_tracked = torch.empty(size=(1,), requires_grad=False).float()
 
         self.register_buffer("running_centers", running_centers)
         self.register_buffer("num_batches_tracked", num_batches_tracked)
@@ -74,8 +76,8 @@ class IILoss(nn.Module):
 
     def get_center_distances(self, mu):
         n_centers = mu.shape[0]
-        a = mu.unsqueeze(1).expand(n_centers, n_centers, mu.size(1)).double()
-        b = mu.unsqueeze(0).expand(n_centers, n_centers, mu.size(1)).double()
+        a = mu.unsqueeze(1).expand(n_centers, n_centers, mu.size(1)).float()
+        b = mu.unsqueeze(0).expand(n_centers, n_centers, mu.size(1)).float()
         dists = torch.norm(a - b, p=2, dim=2).pow(2)
 
         # set diagonal elements to "high" value (this value will limit the inter seperation, so cluster
@@ -84,8 +86,7 @@ class IILoss(nn.Module):
         return dists
 
     def calculate_distances(self, embeddings):
-        distances = osr.utils.torch_get_squared_distances(self.running_centers, embeddings)
-        return distances
+        return pairwise_distances(embeddings, self.centers)
 
     def predict(self, embeddings):
         distances = self.calculate_distances(embeddings)
@@ -126,3 +127,28 @@ class IILoss(nn.Module):
         # this does not influence on the results of the loss, because constant offsets have no impact on the gradient.
         return intra_spread,  inter_separation
 
+
+def pairwise_distances(x, y=None):
+    '''
+    Input: x is a Nxd matrix
+           y is an optional Mxd matirx
+    Output: dist is a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
+            if y is not given then use 'y=x'.
+
+    See https://discuss.pytorch.org/t/efficient-distance-matrix-computation/9065/3
+
+    i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
+    '''
+    x_norm = (x ** 2).sum(1).view(-1, 1)
+    if y is not None:
+        y_t = torch.transpose(y, 0, 1)
+        y_norm = (y ** 2).sum(1).view(1, -1)
+    else:
+        y_t = torch.transpose(x, 0, 1)
+        y_norm = x_norm.view(1, -1)
+
+    dist = x_norm + y_norm - 2.0 * torch.mm(x, y_t)
+    # Ensure diagonal is zero if x=y
+    # if y is None:
+    #     dist = dist - torch.diag(dist.diag)
+    return torch.clamp(dist, 0.0, np.inf)

@@ -3,6 +3,7 @@ import torch as torch
 import torch.nn as nn
 #
 from torch.nn import functional as F
+import numpy as np
 
 import osr.utils
 
@@ -16,7 +17,7 @@ class CACLoss(nn.Module):
     Centers are initialized as unit vectors, scaled by the magnitude.
 
 
-    :param n_classes: number of classes, equald number of class centers
+    :param n_classes: number of classes, equal number of class centers
     :param magnitude: magnitude of class anchors
     :param weight_anchor: weight :math:`\lambda` for loss terms
 
@@ -77,7 +78,8 @@ class CACLoss(nn.Module):
         :param embeddings: embeddings of samples
         :returns: squared euclidean distance of embeddings to anchors
         """
-        distances = osr.utils.torch_get_squared_distances(self.anchors, embeddings)
+
+        distances = pairwise_distances(embeddings, self.centers)
         return distances
 
     def predict(self, embeddings: torch.Tensor) -> torch.Tensor:
@@ -99,3 +101,29 @@ def rejection_score(distance):
     """
     scores = distance * (1 - F.softmin(distance, dim=1))
     return scores
+
+
+def pairwise_distances(x, y=None):
+    '''
+    Input: x is a Nxd matrix
+           y is an optional Mxd matirx
+    Output: dist is a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
+            if y is not given then use 'y=x'.
+
+    See https://discuss.pytorch.org/t/efficient-distance-matrix-computation/9065/3
+
+    i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
+    '''
+    x_norm = (x ** 2).sum(1).view(-1, 1)
+    if y is not None:
+        y_t = torch.transpose(y, 0, 1)
+        y_norm = (y ** 2).sum(1).view(1, -1)
+    else:
+        y_t = torch.transpose(x, 0, 1)
+        y_norm = x_norm.view(1, -1)
+
+    dist = x_norm + y_norm - 2.0 * torch.mm(x, y_t)
+    # Ensure diagonal is zero if x=y
+    # if y is None:
+    #     dist = dist - torch.diag(dist.diag)
+    return torch.clamp(dist, 0.0, np.inf)

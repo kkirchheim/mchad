@@ -3,10 +3,10 @@
 defaults:
   - override /trainer: null # override trainer to null so it's not loaded from main config defaults...
   - override /model: null
-  - override /datamodule: cifar10
+  - override /datamodule: svhn
   - override /callbacks: null
   - override /logger: default
-  - override /testmodules: cifar10
+  - override /testmodules: svhn
 
 # we override default configurations with nulls to prevent them from loading at all
 # instead we define all modules and their paths directly in this config,

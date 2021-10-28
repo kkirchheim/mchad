@@ -4,7 +4,15 @@
 import torch.nn.functional as F
 import pytorch_lightning as pl
 import pytorch_lightning.metrics.functional as metrics
-from src.osr.utils import *
+import logging
+import torch
+from pytorch_lightning.utilities import rank_zero_only
+
+from osr.utils import is_known, contains_known, contains_unknown, contains_known_and_unknown, \
+    is_unknown, is_unknown_unknown, is_known_unknown
+
+import numpy as np
+
 log = logging.getLogger(__name__)
 
 
@@ -25,6 +33,7 @@ def accuracy_at_tpr(pred, target, k=0.95):
     return metrics.accuracy(labels, target)
 
 
+@rank_zero_only
 def log_error_detection_metrics(model: pl.LightningModule, score, stage, y, y_hat, method=None, prog_bar=False):
     """
     Log error-dectection metrics, AUROC and AUPR
@@ -71,6 +80,7 @@ def log_error_detection_metrics(model: pl.LightningModule, score, stage, y, y_ha
         log.warning(e)
 
 
+@rank_zero_only
 def log_uncertainty_metrics(model, score, stage, y, y_hat, method=None, prog_bar=False):
     """
     Log uncertainty metrics, AUROC and AUPR
@@ -117,6 +127,7 @@ def log_uncertainty_metrics(model, score, stage, y, y_hat, method=None, prog_bar
         _log(model, score[~is_known(y)].mean(), "Uncertainty", stage, "MeanConf/unknown/", method, prog_bar=prog_bar)
 
 
+@rank_zero_only
 def log_classification_metrics(model: pl.LightningModule, stage, y, y_hat, logits=None):
     """
 
@@ -148,6 +159,7 @@ def _log(model, value, task, stage, metric, method=None, **kwargs):
         model.log(f"{task}/{metric}/{stage}", value, **kwargs)
 
 
+@rank_zero_only
 def log_osr_metrics(model: pl.LightningModule, score, stage, y, method=None, prog_bar=False):
     """
     Log uncertainty metrics, AUROC and AUPR

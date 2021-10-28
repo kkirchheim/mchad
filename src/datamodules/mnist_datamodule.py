@@ -5,7 +5,7 @@ import numpy as np
 from .base import MyBaseDataModule
 import logging
 
-from src.osr.ossim import TargetMapping
+from osr.ossim import TargetMapping
 
 
 log = logging.getLogger(__name__)

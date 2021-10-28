@@ -5,7 +5,7 @@ import torch
 
 from src.utils.mine import TensorBuffer
 from src.utils.metrics import log_osr_metrics, log_uncertainty_metrics, log_error_detection_metrics
-from src.osr.openmax import OpenMax as OpenMaxLayer
+from osr.openmax import OpenMax as OpenMaxLayer
 
 log = logging.getLogger(__name__)
 

@@ -1,9 +1,0 @@
-_target_: src.models.mnist_model.MNISTLitModel
-lr: 0.001
-weight_decay: 0.0005
-pretrained: null
-densenet:
-  in_channels: 1
-  num_classes: 8
-
-

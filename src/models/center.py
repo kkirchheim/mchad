@@ -7,10 +7,12 @@ from pytorch_lightning import LightningModule
 import hydra
 
 import src.utils.mine as myutils
-from src.osr.utils import is_known
+from osr.utils import is_known
+from osr.nn.loss import CenterLoss
+from src.utils.mine import save_embeddings, collect_outputs
+
 from src.utils.metrics import log_classification_metrics
 from src.utils.mine import create_metadata
-from src.osr.nn.loss import CenterLoss
 
 
 log = logging.getLogger(__name__)
@@ -18,6 +20,7 @@ log = logging.getLogger(__name__)
 
 class Center(LightningModule):
     """
+    Model based on the Center Loss
     """
 
     def __init__(
@@ -73,12 +76,7 @@ class Center(LightningModule):
         loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)
 
         x, y = batch
-        if batch_idx > 1 and batch_idx % 1000 == 0:
-            x, y = batch
-            # myutils.get_tb_writer(self).add_images("image/train", x, global_step=self.global_step)
-            myutils.log_weight_hists(self)
 
-        # TODO: add weighting
         loss = self.weight_center * loss_center + loss_nll
 
         self.log(name="Loss/loss_center/train", value=loss_center, on_step=True)
@@ -90,33 +88,14 @@ class Center(LightningModule):
 
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
-        targets = self._collect_outputs(outputs, "targets")
-        preds = self._collect_outputs(outputs, "preds")
-        logits = self._collect_outputs(outputs, "logits")
-        embedding = self._collect_outputs(outputs, "embedding")
-        images = self._collect_outputs(outputs, "points")
+        targets = collect_outputs(outputs, "targets")
+        preds = collect_outputs(outputs, "preds")
+        logits = collect_outputs(outputs, "logits")
+        embedding = collect_outputs(outputs, "embedding")
+        images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, logits)
-        self._save_embeddings(embedding, images, targets, tag="train")
-
-    def _save_embeddings(self, embedding, images, targets, tag="default", limit=5000):
-        # limit number of saved entries so tensorboard does not crash because of too many sprites
-        log.info(f"Saving embeddings")
-
-        indexes = torch.randperm(len(images))[:limit]
-        header, data = create_metadata(
-            is_known(targets[indexes]),
-            targets[indexes],
-            centers=self.center_loss.centers
-        )
-
-        myutils.get_tb_writer(self).add_embedding(
-            embedding[indexes],
-            metadata=data,
-            global_step=self.global_step,
-            metadata_header=header,
-            label_img=images[indexes],
-            tag=tag)
+        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)
@@ -127,45 +106,21 @@ class Center(LightningModule):
         self.log(name="Loss/loss_nll/val", value=loss_nll)
         self.log(name="Loss/loss/val", value=loss)
 
-        if batch_idx > 1 and batch_idx % 1000 == 0:
-            # x, y = batch
-            # myutils.get_tb_writer(self).add_images("image/val", x, global_step=self.global_step)
-            myutils.log_weight_hists(self)
-
         x, y = batch
         # NOTE: we treat the negative distance as logits
         return {"loss": loss, "preds": preds, "targets": targets, "logits": logits,
                 "embedding": embedding.cpu(), "points": x.cpu()}
 
-    def _collect_outputs(self, outputs: List[Any], key) -> torch.Tensor:
-        if type(outputs) is list:
-            # multiple data loaders
-            # i have no idea when which case hits ...
-            if type(outputs[0]) is list:
-                l = []
-                for output in outputs:
-                    l.extend([o for o in output])
-                return torch.cat(l)
-            elif type(outputs[0]) is dict:
-                return torch.cat([output[key] for output in outputs])
-            else:
-                l = []
-                for output in outputs:
-                    l.extend([o for o in output])
-                return torch.cat(l)
-        else:
-            return torch.cat([output[key] for output in outputs])
-
     def validation_epoch_end(self, outputs: List[Any]):
-        targets = self._collect_outputs(outputs, "targets")
-        preds = self._collect_outputs(outputs, "preds")
-        logits = self._collect_outputs(outputs, "logits")
-        embedding = self._collect_outputs(outputs, "embedding")
-        images = self._collect_outputs(outputs, "points")
+        targets = collect_outputs(outputs, "targets")
+        preds = collect_outputs(outputs, "preds")
+        logits = collect_outputs(outputs, "logits")
+        embedding = collect_outputs(outputs, "embedding")
+        images = collect_outputs(outputs, "points")
 
         # log val metrics
         log_classification_metrics(self, "val", targets, preds, logits)
-        self._save_embeddings(embedding, images, targets, tag="train")
+        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)
@@ -177,15 +132,15 @@ class Center(LightningModule):
                 "embedding": embedding.cpu(), "points": x.cpu()}
 
     def test_epoch_end(self, outputs: List[Any]):
-        targets = self._collect_outputs(outputs, "targets")
-        preds = self._collect_outputs(outputs, "preds")
-        logits = self._collect_outputs(outputs, "logits")
-        embedding = self._collect_outputs(outputs, "embedding")
-        images = self._collect_outputs(outputs, "points")
+        targets = collect_outputs(outputs, "targets")
+        preds = collect_outputs(outputs, "preds")
+        logits = collect_outputs(outputs, "logits")
+        embedding = collect_outputs(outputs, "embedding")
+        images = collect_outputs(outputs, "points")
 
         # log val metrics
         log_classification_metrics(self, "test", targets, preds, logits)
-        self._save_embeddings(embedding, images, targets, tag=f"test-{self._test_epoch}")
+        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag=f"test-{self._test_epoch}")
         self._test_epoch += 1
 
     def configure_optimizers(self):

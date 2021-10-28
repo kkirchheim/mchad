@@ -91,16 +91,16 @@ def estimate_class_centers(embedding: torch.Tensor, target: torch.Tensor, num_ce
     return centers
 
 
-def torch_get_squared_distances(centers, embeddings):
-    return torch_get_distances(centers, embeddings).pow(2)
+# def torch_get_squared_distances(centers, embeddings):
+#     return torch_get_distances(centers, embeddings).pow(2)
+#
 
-
-def torch_get_distances(centers, embeddings):
-    """
-    TODO: this can be done way more efficiently
-    """
-    return torch.cdist(centers, embeddings)
-    #
+# def torch_get_distances(centers, embeddings):
+#     """
+#     TODO: this can be done way more efficiently
+#     """
+#     return torch.cdist(centers, embeddings)
+#     #
     # n_instances = embeddings.shape[0]
     # n_centers = centers.shape[0]
     # distances = torch.empty((n_instances, n_centers)).to(embeddings.device)

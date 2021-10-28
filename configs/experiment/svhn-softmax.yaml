@@ -3,42 +3,40 @@
 defaults:
   - override /trainer: null # override trainer to null so it's not loaded from main config defaults...
   - override /model: null
-  - override /datamodule: cifar10
+  - override /datamodule: svhn
   - override /callbacks: null
   - override /logger: default
-  - override /testmodules: cifar10
+  - override /testmodules: svhn
 
 # we override default configurations with nulls to prevent them from loading at all
 # instead we define all modules and their paths directly in this config,
 # so everything is stored in one place
 
 seed: 12345
-
-# TODO: not all operations are implemented as deterministic
-deterministic: False
+deterministic: True
+debug: True
+ignore_warnings: True
 
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
   min_epochs: 20
   max_epochs: 20
-  # limit_train_batches: 400
+  limit_train_batches: 784 # 392 batches x2
+  limit_val_batches: 80 # 392 batches x2
   #  gradient_clip_val: 0.5
   #  accumulate_grad_batches: 2
   weights_summary: null
   # resume_from_checkpoint: ${work_dir}/last.ckpt
 
 model:
-  _target_: src.models.CAC
+  _target_: src.models.SoftMax
   lr: 0.001
   weight_decay: 0.00005
   # pretrained weights?
   pretrained: null
-  weight_anchor: 1.0
-  magnitude: 1.0
   n_classes: 10
   backbone:
-    # _target_: torchvision.models.resnet.wide_resnet101_2
     _target_: src.models.modules.wrn.WideResNet
     num_classes: 10
     widen_factor: 2
@@ -58,11 +56,29 @@ callbacks:
   lr_monitor:
     _target_: pytorch_lightning.callbacks.LearningRateMonitor
 
-  distance:
-    _target_: src.callbacks.distance.DistanceThresholding
+  softmax:
+    _target_: src.callbacks.softmax.SoftmaxThresholding
     use_in_val: True
     use_in_test: True
-  cac:
-    _target_: src.callbacks.cac.CACScorer
+  energy:
+    _target_: src.callbacks.energy.EnergyBased
+    temperature: 1
+    use_in_val: True
+    use_in_test: True
+  mcd:
+    _target_: src.callbacks.mcd.MonteCarloDropout
+    num_classes: 10
+    rounds: 30
+    use_in_val: False
+    use_in_test: True
+  odin:
+    _target_: src.callbacks.odin.ODIN
+    eps: 0.02
+    t: 1000
+    use_in_val: False
+    use_in_test: True
+  tscaling:
+    _target_: src.callbacks.tscaling.TemperatureScaling
+    temperature: 1000
     use_in_val: True
     use_in_test: True

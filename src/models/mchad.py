@@ -9,11 +9,8 @@ import hydra
 
 import src.utils.mine as myutils
 from src.utils.mine import save_embeddings, collect_outputs
-from src.osr.utils import is_known
+from osr.utils import is_known
 from src.utils.metrics import log_classification_metrics
-
-from src.osr.nn.loss import CenterLoss
-
 
 log = logging.getLogger(__name__)
 
@@ -29,6 +26,7 @@ class MCHAD(LightningModule):
             backbone: dict = None,
             weight_center=1.0,
             weight_oe=1.0,
+            weight_ce=1.0,
             pretrained=None,
             n_classes=10,
             n_embedding=10,
@@ -48,6 +46,7 @@ class MCHAD(LightningModule):
         self.ce_loss = nn.CrossEntropyLoss()
         self.weight_oe = weight_oe
         self.weight_center = weight_center
+        self.weight_ce = weight_ce
 
         self.radius = torch.nn.Parameter(torch.tensor([radius]).float())
         self.radius.requires_grad = False
@@ -93,7 +92,7 @@ class MCHAD(LightningModule):
         loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(batch)
         x, y = batch
 
-        loss = self.weight_center * loss_center + loss_nll + self.weight_oe * loss_out
+        loss = self.weight_center * loss_center + self.weight_ce * loss_nll + self.weight_oe * loss_out
 
         self.log(name="Loss/loss_center/train", value=loss_center, on_step=True)
         self.log(name="Loss/loss_nll/train", value=loss_nll, on_step=True)
@@ -112,11 +111,11 @@ class MCHAD(LightningModule):
         images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, -dists)
-        save_embeddings(self, dists, embedding, images, targets, tag="train")
+        save_embeddings(self, dists, embedding, images, targets, tag="train", centers=self.center_loss.centers)
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(batch)
-        loss = self.weight_center * loss_center + loss_nll + self.weight_oe * loss_out
+        loss = self.weight_center * loss_center + self.weight_ce * loss_nll + self.weight_oe * loss_out
         x, y = batch
 
         self.log(name="Loss/loss_center/val", value=loss_center)
@@ -144,9 +143,15 @@ class MCHAD(LightningModule):
         log_classification_metrics(self, "val", targets, preds, -dists)
         save_embeddings(self, dists, embedding, images, targets, tag="val")
 
+        # save centers
+        save_embeddings(self,
+                        embedding=self.center_loss.centers,
+                        targets=np.arange(self.center_loss.centers.shape[0]),
+                        tag="centers")
+
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(batch)
-        loss = self.weight_center * loss_center + loss_nll + self.weight_oe * loss_out
+        loss = self.weight_center * loss_center + self.weight_ce * loss_nll + self.weight_oe * loss_out
 
         x, y = batch
 

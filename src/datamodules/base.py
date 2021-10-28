@@ -1,12 +1,11 @@
 from typing import Optional
-import torch.random
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import transforms
 import logging
 import numpy as np
 
-from src.osr.ossim import TargetMapping
+from osr.ossim import TargetMapping
 
 log = logging.getLogger(__name__)
 

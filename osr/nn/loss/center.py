@@ -4,8 +4,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from src.osr.utils import torch_get_squared_distances
-
 log = logging.getLogger(__name__)
 
 

@@ -1,4 +1,4 @@
-# define test cases for models trained on the cifar-10
+# define test cases for models trained on the cifar-100
 
 test_vs_textures:
   _target_: src.datamodules.ood_datamodule.OODDataModule
@@ -7,7 +7,7 @@ test_vs_textures:
     mean: [ 0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666 ]
     std: [ 0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215 ]
   data_in:
-    _target_: torchvision.datasets.CIFAR10
+    _target_: torchvision.datasets.CIFAR100
     root: ${data_dir}
     train: False
     download: True
@@ -22,7 +22,7 @@ test_vs_uniformnoise:
     mean: [ 0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666 ]
     std: [ 0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215 ]
   data_in:
-    _target_: torchvision.datasets.CIFAR10
+    _target_: torchvision.datasets.CIFAR100
     root: ${data_dir}
     train: False
     download: True
@@ -37,7 +37,7 @@ test_vs_gaussiannoise:
     mean: [ 0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666 ]
     std: [ 0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215 ]
   data_in:
-    _target_: torchvision.datasets.CIFAR10
+    _target_: torchvision.datasets.CIFAR100
     root: ${data_dir}
     train: False
     download: True
@@ -53,7 +53,7 @@ test_vs_tinycrop:
     mean: [ 0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666 ]
     std: [ 0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215 ]
   data_in:
-    _target_: torchvision.datasets.CIFAR10
+    _target_: torchvision.datasets.CIFAR100
     root: ${data_dir}
     train: False
     download: True
@@ -68,7 +68,7 @@ test_vs_tinyresize:
     mean: [ 0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666 ]
     std: [ 0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215 ]
   data_in:
-    _target_: torchvision.datasets.CIFAR10
+    _target_: torchvision.datasets.CIFAR100
     root: ${data_dir}
     train: False
     download: True
@@ -83,7 +83,7 @@ test_vs_lsuncrop:
     mean: [ 0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666 ]
     std: [ 0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215 ]
   data_in:
-    _target_: torchvision.datasets.CIFAR10
+    _target_: torchvision.datasets.CIFAR100
     root: ${data_dir}
     train: False
     download: True
@@ -98,7 +98,7 @@ test_vs_lsunresize:
     mean: [ 0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666 ]
     std: [ 0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215 ]
   data_in:
-    _target_: torchvision.datasets.CIFAR10
+    _target_: torchvision.datasets.CIFAR100
     root: ${data_dir}
     train: False
     download: True

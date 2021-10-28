@@ -13,7 +13,7 @@ class SVHNDataModule(MyBaseDataModule):
     def __init__(
             self,
             data_dir: str = "data/",
-            train_val_split: Tuple[int, int, int] = (84_289, 5_000),
+            train_val_split: Tuple[int, int, int] = (84_289, 5000),
             batch_size: int = 128,
             num_workers: int = 10,
             pin_memory: bool = False,
@@ -43,17 +43,20 @@ class SVHNDataModule(MyBaseDataModule):
     def setup(self, stage: Optional[str] = None):
         """Load data. Set variables: self.data_train, self.data_val, self.data_test."""
         super(SVHNDataModule, self).setup(stage)
-        train_set = SVHN(
+
+        self.data_train = SVHN(
             self.data_dir,
             split="train",
-            transform=self.transforms,
+            transform=self.train_trans,
             target_transform=self.target_transform
         )
-        self.data_train, self.data_val = random_split(train_set, self.train_val_split)
 
         self.data_test = SVHN(
             self.data_dir,
             split="test",
-            transform=self.transforms,
+            transform=self.test_trans,
             target_transform=self.target_transform
         )
+
+        self.data_val = self.data_test
+

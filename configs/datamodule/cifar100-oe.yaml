@@ -1,6 +1,6 @@
 _target_: src.datamodules.multi_datamodule.MultiDatamodule
 module1:
-  _target_: src.datamodules.cifar10_datamodule.CIFAR10DataModule
+  _target_: src.datamodules.cifar100_datamodule.CIFAR100DataModule
   normalize:
     # https://albumentations.ai/docs/autoalbument/examples/svhn/
     mean: [0.4376821, 0.4437697, 0.47280442]
