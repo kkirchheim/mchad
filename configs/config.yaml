@@ -3,10 +3,10 @@
 # specify here default training configuration
 defaults:
   - trainer: minimal.yaml
-  - model: mnist_model.yaml
-  - datamodule: mnist_datamodule.yaml
-  - callbacks: many.yaml # set this to null if you don't want to use callbacks
-  - logger: many_loggers # set logger here or use command line (e.g. `python run.py logger=wandb`)
+  - model: null
+  - datamodule: null
+  - callbacks: default
+  - logger: default # set logger here or use command line (e.g. `python run.py logger=wandb`)
   - testmodules: null
   - experiment: null
   - hparams_search: null
@@ -27,6 +27,7 @@ work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
 data_dir: ${work_dir}/data/
+dataset_dir: /home/ki/datasets/
 
 # use `python run.py debug=true` for easy debugging!
 # this will run 1 train, val and test loop with only 1 batch

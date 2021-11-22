@@ -21,16 +21,16 @@ class MCHAD(LightningModule):
 
     def __init__(
             self,
-            lr: float = 0.001,
-            weight_decay: float = 0.0005,
             backbone: dict = None,
+            optimizer: dict = None,
+            scheduler: dict = None,
             weight_center=1.0,
             weight_oe=1.0,
             weight_ce=1.0,
-            pretrained=None,
             n_classes=10,
             n_embedding=10,
             radius=1.0,
+            pretrained=None,
             **kwargs
     ):
         super().__init__()
@@ -42,17 +42,22 @@ class MCHAD(LightningModule):
         self.model = hydra.utils.instantiate(backbone)
 
         # loss function
-        self.center_loss = MCHADLoss(n_classes=n_classes, n_embedding=n_embedding)
+        self.center_loss = MchadCenterLoss(n_classes=n_classes, n_embedding=n_embedding)
         self.ce_loss = nn.CrossEntropyLoss()
         self.weight_oe = weight_oe
         self.weight_center = weight_center
         self.weight_ce = weight_ce
 
+        # radius of the spheres. These are fixed, so they do not require gradients
         self.radius = torch.nn.Parameter(torch.tensor([radius]).float())
         self.radius.requires_grad = False
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
+
+        # save configurations
+        self.optimizer = optimizer
+        self.scheduler = scheduler
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -75,7 +80,6 @@ class MCHAD(LightningModule):
 
         if (~known).any():
             # will give squared distance
-
             d = (self.radius - distmat[~known]).pow(2).relu()
             loss_out = d.sum(dim=1).mean()
         else:
@@ -171,79 +175,34 @@ class MCHAD(LightningModule):
         self._test_epoch += 1
 
     def configure_optimizers(self):
-        """Choose what optimizers and learning-rate schedulers to use in your optimization.
-        Normally you'd need one. But in the case of GANs or similar you might have multiple.
-
-        See examples here:
-            https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#configure-optimizers
-        """
-        # TODO: make configurable
-        opti = torch.optim.Adam(
-            params=self.parameters(),
-            lr=self.hparams.lr,
-            weight_decay=self.hparams.weight_decay,
-            # momentum=self.hparams.momentum,
-            # nesterov=self.hparams.nesterov
-        )
-
-        # TODO: make configurable
-        sched = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-            optimizer=opti,
-            T_0=20
-        )
-
+        opti = hydra.utils.instantiate(self.optimizer, params=self.parameters())
+        sched = hydra.utils.instantiate(self.scheduler, optimizer=opti)
         return [opti], [sched]
 
 
-class MCHADLoss(nn.Module):
+
+class MchadCenterLoss(nn.Module):
     """
-    Multi Class Hypersphere Anomaly Detection Loss
+    Multi Class Hypersphere Anomaly Detection Loss (center loss component)
 
     :param n_classes: number of classes.
     :param n_embedding: feature dimension.
-    :param magnitude: magnitude of
-
-    :see Implementation: https://github.com/KaiyangZhou/pytorch-center-loss
-    :see Paper: https://ydwen.github.io/papers/WenECCV16.pdf
     """
 
-    def __init__(self, n_classes, n_embedding, magnitude=1, fixed=False):
-        super(MCHADLoss, self).__init__()
+    def __init__(self, n_classes, n_embedding):
+        super(MchadCenterLoss, self).__init__()
         self.num_classes = n_classes
         self.feat_dim = n_embedding
-        self.magnitude = magnitude
-
         self.centers = nn.Parameter(torch.randn(self.num_classes, self.feat_dim))
-        if fixed:
-            self.centers.requires_grad = False
-
-        # In the published code, they initialize centers randomly.
-        # This, however, is not a good idea if the loss is used without an additional inter-class-discriminability term
-        self._init_centers()
-
-    def _init_centers(self):
-        if self.num_classes == self.feat_dim:
-            torch.nn.init.eye_(self.centers)
-
-            if not self.centers.requires_grad:
-                self.centers.mul_(self.magnitude)
-
-            # Orthogonal could also be a good option. this can also be used if the embedding dimensionality is
-            # different then the number of classes
-            # torch.nn.init.orthogonal_(self.centers, gain=10)
-        else:
-            torch.nn.init.normal_(self.centers)
-
-            if self.magnitude != 1:
-                log.warning(f"Not applying magnitude parameter.")
+        torch.nn.init.normal_(self.centers)
 
     def forward(self, distmat, labels) -> torch.Tensor:
         """
-        :param: x: feature matrix with shape (batch_size, feat_dim).
+        Calculate loss function.
+
+        :param distmat: matrix with distances
         :param labels: ground truth labels with shape (batch_size).
         """
-        # distmat = self.pairwise_distances(x, self.centers)
-
         classes = torch.arange(self.num_classes).long().to(distmat.device)
         labels = labels.unsqueeze(1).expand(distmat.size(0), self.num_classes)
         mask = labels.eq(classes.expand(distmat.size(0), self.num_classes))
@@ -254,20 +213,22 @@ class MCHADLoss(nn.Module):
         return loss
 
     def calculate_distances(self, embeddings: torch.Tensor):
-        return self.pairwise_distances(embeddings, self.centers)
+        return self._pairwise_distances(embeddings, self.centers)
 
     @staticmethod
-    def pairwise_distances(x, y=None):
-        '''
-        Input: x is a Nxd matrix
-               y is an optional Mxd matirx
+    def _pairwise_distances(x, y=None):
+        """
+        Calculate pairwise distance by quadratic expansion.
+
+        :param x: is a Nxd matrix
+        :param y:  Mxd matrix
+
         Output: dist is a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
-                if y is not given then use 'y=x'.
 
         See https://discuss.pytorch.org/t/efficient-distance-matrix-computation/9065/3
 
         i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
-        '''
+        """
         x_norm = (x ** 2).sum(1).view(-1, 1)
         if y is not None:
             y_t = torch.transpose(y, 0, 1)
@@ -277,9 +238,7 @@ class MCHADLoss(nn.Module):
             y_norm = x_norm.view(1, -1)
 
         dist = x_norm + y_norm - 2.0 * torch.mm(x, y_t)
-        # Ensure diagonal is zero if x=y
-        # if y is None:
-        #     dist = dist - torch.diag(dist.diag)
+
         return torch.clamp(dist, 0.0, np.inf)
 
     def predict(self, embeddings):

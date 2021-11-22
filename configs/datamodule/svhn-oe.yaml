@@ -14,8 +14,10 @@ module1:
 module2:
   _target_: src.datamodules.ood_datamodule.SingleOODDataModule
   dataset:
-    _target_: torchvision.datasets.ImageFolder
-    root: ${data_dir}/mini-imagenet-full-32x32
+    _target_: src.datamodules.datasets.TinyImages
+    datafile: ${dataset_dir}/tiny-images/tiny_images.bin
+    cifar_index_file: ${dataset_dir}/tiny-images/80mn_cifar_idxs.txt
+    exclude_cifar: True
   normalize:
     # https://albumentations.ai/docs/autoalbument/examples/svhn/
     mean: [0.4376821, 0.4437697, 0.47280442]

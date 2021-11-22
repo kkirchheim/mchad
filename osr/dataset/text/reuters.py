@@ -12,32 +12,7 @@ from osr.dataset.text.stop_words import stop_words
 log = logging.getLogger(__name__)
 
 
-class Reuters52(OSRDataset):
-    def __init__(self, root, download=False):
-        super(Reuters52, self).__init__()
-        self._dataset1 = Reuters52Base(root, train=True, download=download)
-        self._dataset2 = Reuters52Base(root, train=False, download=download)
-        self.dataset = ConcatDataset([self._dataset1, self._dataset2])
-
-    def __getitem__(self, item):
-        x, y = self.dataset[item]
-
-        if self.target_transform:
-            y = self.target_transform(y)
-
-        if self.transforms:
-            x = self.transforms(x)
-
-        return x, y
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def unique_targets(self) -> np.ndarray:
-        return np.unique(np.concatenate(self._dataset1._labels, self._dataset2._labels))
-
-
-class Reuters52Base(Dataset):
+class Reuters52(Dataset):
     """
     Stemmed version of the reuters 52 dataset.
 

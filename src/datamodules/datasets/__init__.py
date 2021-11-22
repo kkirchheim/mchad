@@ -1,0 +1,1 @@
+from .tinyimages import TinyImages

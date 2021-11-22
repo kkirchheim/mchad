@@ -1,7 +1,0 @@
-defaults:
-  - default.yaml
-  - mcd.yaml
-  - odin.yaml
-  - softmax.yaml
-  - tscaling.yaml
-  - openmax.yaml

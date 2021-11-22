@@ -33,12 +33,17 @@ class EnergyBased(pl.callbacks.Callback):
         log_uncertainty_metrics(pl_module, -energy, stage, y, -energy, method=EnergyBased.NAME)
         log_error_detection_metrics(pl_module, -energy, stage, y, y_hat, method=EnergyBased.NAME)
 
-        log_score_histogram(pl_module, stage, energy, y, y_hat, method=EnergyBased.NAME)
+        try:
+            log_score_histogram(pl_module, stage, energy, y, y_hat, method=EnergyBased.NAME)
+        except Exception as e:
+            log.exception(e)
+
         # log_score_histogram(pl_module, stage, softmax_conf, y, y_hat, method="Energy")
         self.buffer.clear()
 
     def calculate_energy(self, logits):
         logits = logits / self.temperature
+        # TODO: use logsumexp
         z = logits.exp().sum(dim=1).clamp(min=1e-10).log()
         energy = -self.temperature * z
         return energy

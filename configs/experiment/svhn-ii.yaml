@@ -8,35 +8,28 @@ defaults:
   - override /logger: default
   - override /testmodules: svhn
 
-# we override default configurations with nulls to prevent them from loading at all
-# instead we define all modules and their paths directly in this config,
-# so everything is stored in one place
-
 seed: 12345
-
-# TODO: not all operations are implemented as deterministic
-deterministic: False
+deterministic: True
 
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
   min_epochs: 20
   max_epochs: 20
-  #  gradient_clip_val: 0.5
-  #  accumulate_grad_batches: 2
   weights_summary: null
-  # resume_from_checkpoint: ${work_dir}/last.ckpt
 
 model:
   _target_: src.models.IIModel
-  lr: 0.00001
-  weight_decay: 0.00000
-  # pretrained weights?
-  pretrained: null
   n_classes: 10
   n_embedding: 16
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 0.00001
+    weight_decay: 0.00000 # TODO:
+  scheduler:
+    _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+    T_0: 20
   backbone:
-    # _target_: torchvision.models.resnet.wide_resnet101_2
     _target_: src.models.modules.wrn.WideResNet
     num_classes: 16
     widen_factor: 2

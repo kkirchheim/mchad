@@ -23,12 +23,12 @@ class IIModel(LightningModule):
 
     def __init__(
             self,
-            lr: float = 0.001,
-            weight_decay: float = 0.0005,
             backbone: dict = None,
+            optimizer: dict = None,
+            scheduler: dict = None,
             n_classes=10,
             n_embedding=10,
-            weight_sep=1.0, # default, as in the original paper
+            weight_sep=1.0,  # weight for separation term. default, as in the original paper
             **kwargs
     ):
         super().__init__()
@@ -43,6 +43,11 @@ class IIModel(LightningModule):
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
+
+        # save configurations
+        self.optimizer = optimizer
+        self.scheduler = scheduler
+
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -139,21 +144,7 @@ class IIModel(LightningModule):
         self._test_epoch += 1
 
     def configure_optimizers(self):
-        """Choose what optimizers and learning-rate schedulers to use in your optimization.
-        Normally you'd need one. But in the case of GANs or similar you might have multiple.
-
-        See examples here:
-            https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#configure-optimizers
-        """
-        # TODO: make configurable
-        opti = torch.optim.Adam(
-            params=self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay
-        )
-
-        # TODO: make configurable
-        sched = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-            optimizer=opti,
-            T_0=20
-        )
-
+        opti = hydra.utils.instantiate(self.optimizer, params=self.parameters())
+        sched = hydra.utils.instantiate(self.scheduler, optimizer=opti)
         return [opti], [sched]
+

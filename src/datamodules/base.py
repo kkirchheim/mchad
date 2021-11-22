@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import transforms
 import logging
 import numpy as np
+import PIL
 
 from osr.ossim import TargetMapping
 
@@ -16,9 +17,15 @@ class ToRBG(object):
     """
 
     def __call__(self, x):
-        if x.mode != "RGB":
+        try:
             return x.convert("RGB")
-        return x
+        except:
+            # we assume it already is RGB
+            return x
+        # if type(x) is PIL.Image:
+        #     if x.mode != "RGB":
+        #
+        # return x
 
 
 class MyBaseDataModule(LightningDataModule):

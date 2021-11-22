@@ -24,24 +24,23 @@ trainer:
   max_epochs: 20
   limit_train_batches: 784 # 392 batches x2
   limit_val_batches: 80 # 392 batches x2
-  #  gradient_clip_val: 0.5
-  #  accumulate_grad_batches: 2
   weights_summary: null
-  # resume_from_checkpoint: ${work_dir}/last.ckpt
 
 model:
   _target_: src.models.MCHAD
-  lr: 0.001
-  weight_decay: 0.00005
-  # pretrained weights?
-  pretrained: null
   n_classes: 10
-  n_embedding: 16
+  n_embedding: 16  # has to match output of backbone
   radius: 1.0
   weight_center: 0.5
   weight_oe: 0.1
-#  nesterov: True
-#  momentum: 0.9
+  weight_ce: 1.0
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 0.001
+    weight_decay: 0.00005
+  scheduler:
+    _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+    T_0: 20
   backbone:
     _target_: src.models.modules.wrn.WideResNet
     num_classes: 16

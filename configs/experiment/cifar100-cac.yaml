@@ -1,16 +1,12 @@
 # @package _global_
 
 defaults:
-  - override /trainer: null # override trainer to null so it's not loaded from main config defaults...
+  - override /trainer: null # override trainer to null, so it's not loaded from main config defaults...
   - override /model: null
-  - override /datamodule: svhn
+  - override /datamodule: cifar100
   - override /callbacks: null
   - override /logger: default
-  - override /testmodules: svhn
-
-# we override default configurations with nulls to prevent them from loading at all
-# instead we define all modules and their paths directly in this config,
-# so everything is stored in one place
+  - override /testmodules: cifar100
 
 seed: 12345
 
@@ -20,25 +16,25 @@ deterministic: False
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
-  min_epochs: 20
-  max_epochs: 20
+  min_epochs: 100
+  max_epochs: 100
   weights_summary: null
 
 model:
   _target_: src.models.CAC
   weight_anchor: 1.0
   magnitude: 1.0
-  n_classes: 10
+  n_classes: 100
   optimizer:
     _target_: torch.optim.Adam
     lr: 0.001
     weight_decay: 0.00005
   scheduler:
     _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-    T_0: 20
+    T_0: 100
   backbone:
     _target_: src.models.modules.wrn.WideResNet
-    num_classes: 10
+    num_classes: 100
     widen_factor: 2
     depth: 40
     drop_rate: 0.3

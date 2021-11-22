@@ -7,8 +7,11 @@ Dataset is available here: https://archive.org/details/80-million-tiny-images-2-
 Code taken from https://github.com/wetliu/energy_ood/blob/master/utils/tinyimages_80mn_loader.py
 
 """
+import logging
 import numpy as np
 import torch
+
+log = logging.getLogger(__name__)
 
 
 class TinyImages(torch.utils.data.Dataset):
@@ -16,6 +19,7 @@ class TinyImages(torch.utils.data.Dataset):
     def __init__(self, datafile, cifar_index_file, transform=None, exclude_cifar=True):
         self.datafile = datafile
         self.cifar_index_file = cifar_index_file
+        self.n_images = 79302017  #
 
         data_file = open(self.datafile, "rb")
 
@@ -42,11 +46,11 @@ class TinyImages(torch.utils.data.Dataset):
             self.in_cifar = lambda x: x in self.cifar_idxs
 
     def __getitem__(self, index):
-        index = (index + self.offset) % 79302016
+        index = (index + self.offset) % self.n_images
 
         if self.exclude_cifar:
             while self.in_cifar(index):
-                index = np.random.randint(79302017)
+                index = np.random.randint(self.n_images)
 
         while True:
             try:
@@ -54,13 +58,18 @@ class TinyImages(torch.utils.data.Dataset):
                 if self.transform is not None:
                     img = self.transform(img)
 
-                return img, 0  # 0 is the class
-            except:
-                index = np.random.randint(79302017)
+                return img, -1  # 0 is the class
+            except ValueError as e:
+                # log.warning(f"Failed to read image {index}")
+                index = np.random.randint(self.n_images)
+            except Exception as e:
+                log.warning(f"Failed to read image {index}")
+                log.exception(e)
+                index = np.random.randint(self.n_images)
 
                 if self.exclude_cifar:
                     while self.in_cifar(index):
-                        index = np.random.randint(79302017)
+                        index = np.random.randint(self.n_images)
 
     def __len__(self):
-        return 79302017
+        return self.n_images

@@ -39,7 +39,9 @@ class OODDataModule(MyBaseDataModule):
     def setup(self, stage: Optional[str] = None):
         """Create instances of both datasets"""
         super().setup(stage)
+        log.info(f"Instantiating IN {self.dataset_in}")
         dataset_in = hydra.utils.instantiate(self.dataset_in)
+        log.info(f"Instantiating OOD {self.dataset_ood}")
         dataset_ood = hydra.utils.instantiate(self.dataset_ood)
 
         # manually set transformations

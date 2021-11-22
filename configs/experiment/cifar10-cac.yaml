@@ -8,10 +8,6 @@ defaults:
   - override /logger: default
   - override /testmodules: cifar10
 
-# we override default configurations with nulls to prevent them from loading at all
-# instead we define all modules and their paths directly in this config,
-# so everything is stored in one place
-
 seed: 12345
 
 # TODO: not all operations are implemented as deterministic
@@ -22,23 +18,21 @@ trainer:
   gpus: 0
   min_epochs: 20
   max_epochs: 20
-  # limit_train_batches: 400
-  #  gradient_clip_val: 0.5
-  #  accumulate_grad_batches: 2
   weights_summary: null
-  # resume_from_checkpoint: ${work_dir}/last.ckpt
 
 model:
   _target_: src.models.CAC
-  lr: 0.001
-  weight_decay: 0.00005
-  # pretrained weights?
-  pretrained: null
   weight_anchor: 1.0
   magnitude: 1.0
   n_classes: 10
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 0.001
+    weight_decay: 0.00005
+  scheduler:
+    _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+    T_0: 20
   backbone:
-    # _target_: torchvision.models.resnet.wide_resnet101_2
     _target_: src.models.modules.wrn.WideResNet
     num_classes: 10
     widen_factor: 2
