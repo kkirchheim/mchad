@@ -18,8 +18,6 @@ trainer:
   gpus: 0
   min_epochs: 20
   max_epochs: 20
-  limit_train_batches: 784 # 392 batches x2
-  limit_val_batches: 80 # 392 batches x2
   weights_summary: null
 
 model:

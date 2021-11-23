@@ -80,8 +80,8 @@ class MCHAD(LightningModule):
 
         if (~known).any():
             # will give squared distance
-            d = (self.radius - distmat[~known]).pow(2).relu()
-            loss_out = d.sum(dim=1).mean()
+            d = (self.radius.pow(2) - distmat[~known].pow(2)).relu()
+            loss_out = d.sum(dim=1).sum()  # sum over classes, then sum over batch
         else:
             loss_out = 0
 
@@ -90,7 +90,8 @@ class MCHAD(LightningModule):
         return loss_center, loss_nll, loss_out, preds, distmat, y, embedding
 
     def training_step(self, batch: Any, batch_idx: int, **kwargs):
-        if type(batch) is list:
+        if type(batch) is list and type(batch[0]) is list:
+            # we are in multi-training-set mode
             batch = torch.cat([b[0] for b in batch]), torch.cat([b[1] for b in batch])
 
         loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(batch)
