@@ -32,21 +32,15 @@ class OpenSetSimulation(object):
         pass
 
     def train_dataset(self, in_dist=True, out_dist=False) -> Dataset:
-        """
-
-        """
+        """ """
         pass
 
     def val_dataset(self, in_dist=True, out_dist=True) -> Dataset:
-        """
-
-        """
+        """ """
         pass
 
     def test_dataset(self, in_dist=True, out_dist=True) -> Dataset:
-        """
-
-        """
+        """ """
         pass
 
 
@@ -61,10 +55,21 @@ class DynamicOSS(OpenSetSimulation):
     :param kuc: number of out-of-distribution classes in training set (known unknowns)
     :param uuc_val: number of out-of-distribution classes in validation set (unknown unknowns)
     :param uuc_test: number of out-of-distribution classes in test set (unknown unknowns + test)
-    :param seed: seed to use for splits 
+    :param seed: seed to use for splits
     """
 
-    def __init__(self, dataset, train_size=0.7, val_size=0.2, test_size=0.1, kkc=6, kuc=0, uuc_val=2, uuc_test=2, seed=None):
+    def __init__(
+        self,
+        dataset,
+        train_size=0.7,
+        val_size=0.2,
+        test_size=0.1,
+        kkc=6,
+        kuc=0,
+        uuc_val=2,
+        uuc_test=2,
+        seed=None,
+    ):
 
         self._dataset = dataset
         self._targets = self.get_targets(self._dataset)
@@ -89,15 +94,15 @@ class DynamicOSS(OpenSetSimulation):
         self.out_test = uuc_test
 
         self.indices = {
-            "train":    {"kkc": [], "kuc": [], "uuc": []},
-            "val":      {"kkc": [], "kuc": [], "uuc": []},
-            "test":     {"kkc": [], "kuc": [], "uuc": []}
+            "train": {"kkc": [], "kuc": [], "uuc": []},
+            "val": {"kkc": [], "kuc": [], "uuc": []},
+            "test": {"kkc": [], "kuc": [], "uuc": []},
         }
 
         self.classes = {
-            "train":    {"kkc": [], "kuc": [], "uuc": []},
-            "val":      {"kkc": [], "kuc": [], "uuc": []},
-            "test":     {"kkc": [], "kuc": [], "uuc": []}
+            "train": {"kkc": [], "kuc": [], "uuc": []},
+            "val": {"kkc": [], "kuc": [], "uuc": []},
+            "test": {"kkc": [], "kuc": [], "uuc": []},
         }
 
         self.class2idx = {}
@@ -159,7 +164,9 @@ class DynamicOSS(OpenSetSimulation):
     def _split(self, seed):
         # make sure results are stable
         rng: np.random.Generator = np.random.default_rng(seed=seed)
-        log.debug(f"Creating ossim for dataset with {len(self._dataset)} samples and {len(self.unique_targets)} classes")
+        log.debug(
+            f"Creating ossim for dataset with {len(self._dataset)} samples and {len(self.unique_targets)} classes"
+        )
 
         if isinstance(self.in_train, str):
             self.in_train = [int(c) for c in self.in_train.split(",")]
@@ -180,10 +187,15 @@ class DynamicOSS(OpenSetSimulation):
             test_out_c = classes_to_split
         else:
             perm_class = rng.permutation(self.unique_targets)
-            train_out_c = perm_class[:self.out_train]
-            val_out_c = perm_class[self.out_train:self.out_train + self.out_val]
-            test_out_c = perm_class[self.out_train + self.out_val:self.out_train + self.out_val + self.out_test]
-            train_in_c = perm_class[self.out_train + self.out_val + self.out_test:]
+            train_out_c = perm_class[: self.out_train]
+            val_out_c = perm_class[self.out_train : self.out_train + self.out_val]
+            test_out_c = perm_class[
+                self.out_train
+                + self.out_val : self.out_train
+                + self.out_val
+                + self.out_test
+            ]
+            train_in_c = perm_class[self.out_train + self.out_val + self.out_test :]
 
         log.debug(f"KKC ({len(train_in_c)}): {train_in_c}")
         log.debug(f"KUC ({len(train_out_c)}): {train_out_c}")
@@ -207,8 +219,8 @@ class DynamicOSS(OpenSetSimulation):
             n_val = int(len(perm_idx) * self.r_val)
 
             self.indices["train"]["kkc"].extend(perm_idx[:n_train])
-            self.indices["val"]["kkc"].extend(perm_idx[n_train:n_train + n_val])
-            self.indices["test"]["kkc"].extend(perm_idx[n_train + n_val:])
+            self.indices["val"]["kkc"].extend(perm_idx[n_train : n_train + n_val])
+            self.indices["test"]["kkc"].extend(perm_idx[n_train + n_val :])
 
             for stage in ["train", "val", "test"]:
                 self.classes[stage]["kkc"].append(clazz)
@@ -223,8 +235,8 @@ class DynamicOSS(OpenSetSimulation):
             n_val = int(len(perm_idx) * self.r_val)
 
             self.indices["train"]["kuc"].extend(perm_idx[:n_train])
-            self.indices["val"]["kuc"].extend(perm_idx[n_train:n_train + n_val])
-            self.indices["test"]["kuc"].extend(perm_idx[n_train + n_val:])
+            self.indices["val"]["kuc"].extend(perm_idx[n_train : n_train + n_val])
+            self.indices["test"]["kuc"].extend(perm_idx[n_train + n_val :])
 
             for stage in ["train", "val", "test"]:
                 self.classes[stage]["kuc"].append(clazz)
@@ -266,6 +278,7 @@ class TargetMapping:
 
     These mappings have to be known at evaluation time.
     """
+
     def __init__(self, train_in_classes, train_out_classes, test_out_classes):
         self.train_in_classes = train_in_classes
         self.train_out_classes = train_out_classes
@@ -275,10 +288,14 @@ class TargetMapping:
         self._map.update({clazz: index for index, clazz in enumerate(train_in_classes)})
 
         # mapping test_out classes to < -1000
-        self._map.update({clazz: (-clazz - 1000) for index, clazz in enumerate(test_out_classes)})
+        self._map.update(
+            {clazz: (-clazz - 1000) for index, clazz in enumerate(test_out_classes)}
+        )
 
         # mapping train_out classes to < 0
-        self._map.update({clazz: (-clazz) for index, clazz in enumerate(train_out_classes)})
+        self._map.update(
+            {clazz: (-clazz) for index, clazz in enumerate(train_out_classes)}
+        )
 
     def __call__(self, target):
         # log.info(f"Target: {target} known: {target in self._map}")

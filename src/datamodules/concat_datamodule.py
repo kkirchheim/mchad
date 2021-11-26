@@ -1,11 +1,11 @@
-from typing import Optional
-from pytorch_lightning import LightningDataModule
-from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split
-from torchvision.transforms import transforms
-import hydra
 import logging
-from base import MyBaseDataModule
+from typing import Optional
 
+import hydra
+from torch.utils.data import ConcatDataset, Dataset, random_split
+from torchvision.transforms import transforms
+
+from base import MyBaseDataModule
 
 log = logging.getLogger(__name__)
 
@@ -43,11 +43,7 @@ class ConcatDatamodule(MyBaseDataModule):
         self.pin_memory = pin_memory
 
         self.transforms = transforms.Compose(
-            [
-                ToRBG(),
-                transforms.ToTensor(),
-                transforms.Resize(size=(height, width))
-            ]
+            [ToRBG(), transforms.ToTensor(), transforms.Resize(size=(height, width))]
         )
 
         # self.dims is returned when you call datamodule.size()
@@ -82,7 +78,9 @@ class ConcatDatamodule(MyBaseDataModule):
         dataset_ood.transform = self.transforms
 
         train_set = ConcatDataset([dataset_in, dataset_ood])
-        self.data_train, self.data_val = random_split(train_set, self.train_val_split, generator=self.split_generator)
+        self.data_train, self.data_val = random_split(
+            train_set, self.train_val_split, generator=self.split_generator
+        )
 
         # set ood label to fixed value
         dataset_ood.target_transform = transforms.Lambda(lambda x: -1)

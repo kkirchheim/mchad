@@ -1,9 +1,10 @@
-from typing import Optional
-from pytorch_lightning import LightningDataModule
-import hydra
 import logging
-from .base import MyBaseDataModule
+from typing import Optional
 
+import hydra
+from pytorch_lightning import LightningDataModule
+
+from .base import MyBaseDataModule
 
 log = logging.getLogger(__name__)
 
@@ -31,9 +32,11 @@ class MultiDatamodule(MyBaseDataModule):
     ):
         super().__init__()
         self.data_module_1: LightningDataModule = hydra.utils.instantiate(
-            module1, _recursive_=False,  _convert_="partial")
+            module1, _recursive_=False, _convert_="partial"
+        )
         self.data_module_2: LightningDataModule = hydra.utils.instantiate(
-            module2, _recursive_=False,  _convert_="partial")
+            module2, _recursive_=False, _convert_="partial"
+        )
 
     @property
     def num_classes(self) -> int:
@@ -55,17 +58,17 @@ class MultiDatamodule(MyBaseDataModule):
     def train_dataloader(self):
         return [
             self.data_module_1.train_dataloader(),
-            self.data_module_2.train_dataloader()
+            self.data_module_2.train_dataloader(),
         ]
 
     def val_dataloader(self):
         return [
             self.data_module_1.val_dataloader(),
-            self.data_module_2.val_dataloader()
+            self.data_module_2.val_dataloader(),
         ]
 
     def test_dataloader(self):
         return [
             self.data_module_1.test_dataloader(),
-            self.data_module_2.test_dataloader()
+            self.data_module_2.test_dataloader(),
         ]

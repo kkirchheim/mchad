@@ -44,7 +44,9 @@ def create_images(directory, architecture, target):
         # train_embed_path = os.path.join(directory, epoch, f"train/tensors.tsv")
 
         data1_meta = pd.read_csv(os_meta_path, delimiter="\t", header=0)
-        data1_df = pd.read_csv(os_embed_path, delimiter="\t", header=None, names=["x", "y"])
+        data1_df = pd.read_csv(
+            os_embed_path, delimiter="\t", header=None, names=["x", "y"]
+        )
         # train_meta_df = pd.read_csv(train_meta_path, delimiter="\t", header=0)
         # train_embed_df = pd.read_csv(train_embed_path, delimiter="\t", header=None, names=["x", "y"])
 
@@ -62,7 +64,9 @@ def create_images(directory, architecture, target):
 
         centers_path = os.path.join(directory, epoch, "centers/tensors.tsv")
         if os.path.exists(centers_path):
-            centers_df = pd.read_csv(centers_path, delimiter="\t", header=None, names=["x", "y"])
+            centers_df = pd.read_csv(
+                centers_path, delimiter="\t", header=None, names=["x", "y"]
+            )
             # print(len(centers_df["x"]))
             ax1.scatter(centers_df["x"], centers_df["y"], c="black", marker="o")
 
@@ -77,11 +81,15 @@ def create_images(directory, architecture, target):
         for label in labels:
             # print(label)
             data = data1_df[data1_meta["label"] == label]
-            ax2.scatter(data["x"], data["y"], cmap="rainbow", marker=",", s=1, label=label)
+            ax2.scatter(
+                data["x"], data["y"], cmap="rainbow", marker=",", s=1, label=label
+            )
 
         centers_path = os.path.join(directory, epoch, "centers/tensors.tsv")
         if os.path.exists(centers_path):
-            centers_df = pd.read_csv(centers_path, delimiter="\t", header=None, names=["x", "y"])
+            centers_df = pd.read_csv(
+                centers_path, delimiter="\t", header=None, names=["x", "y"]
+            )
             # print(len(centers_df["x"]))
             ax2.scatter(centers_df["x"], centers_df["y"], c="black", marker="o")
 
@@ -94,7 +102,7 @@ def create_images(directory, architecture, target):
 
         plt.suptitle(f"{architecture} {e}", y=1.05)
         plt.tight_layout()
-        plt.savefig(path, dpi=300, bbox_inches='tight')
+        plt.savefig(path, dpi=300, bbox_inches="tight")
         # plt.show()
         plt.close()
 
@@ -105,14 +113,38 @@ def create_images(directory, architecture, target):
 def main(directory, architecture):
     create_images(directory, architecture, "val")
     out_path = os.path.join(directory, "train-val.mp4")
-    subprocess.run(["ffmpeg", "-framerate", "2", "-i", f"{directory}/img/embed-val-%05d.png", "-r", "200", "-vf",
-                    "scale=1920:1080", f"{out_path}"])
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-framerate",
+            "2",
+            "-i",
+            f"{directory}/img/embed-val-%05d.png",
+            "-r",
+            "200",
+            "-vf",
+            "scale=1920:1080",
+            f"{out_path}",
+        ]
+    )
 
     create_images(directory, architecture, "train")
     out_path = os.path.join(directory, "train-train.mp4")
-    subprocess.run(["ffmpeg", "-framerate", "2", "-i", f"{directory}/img/embed-train-%05d.png", "-r", "200", "-vf",
-                    "scale=1920:1080", f"{out_path}"])
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-framerate",
+            "2",
+            "-i",
+            f"{directory}/img/embed-train-%05d.png",
+            "-r",
+            "200",
+            "-vf",
+            "scale=1920:1080",
+            f"{out_path}",
+        ]
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

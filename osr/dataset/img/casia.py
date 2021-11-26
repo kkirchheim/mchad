@@ -1,5 +1,6 @@
-from torchvision.datasets import ImageFolder
 import logging
+
+from torchvision.datasets import ImageFolder
 
 log = logging.getLogger(__name__)
 
@@ -18,5 +19,6 @@ class CASIA(ImageFolder):
 
     def __init__(self, root, transform=None, target_transform=None, **kwargs):
 
-        super(CASIA, self).__init__(root, transform=transform, target_transform=target_transform)
-
+        super(CASIA, self).__init__(
+            root, transform=transform, target_transform=target_transform
+        )

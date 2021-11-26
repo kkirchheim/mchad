@@ -16,7 +16,15 @@ log = logging.getLogger(__name__)
 
 
 class StanfordCars(VisionDataset):
-    def __init__(self, root, train=True, loader=default_loader, target_transform=None, transform=None, download=False):
+    def __init__(
+        self,
+        root,
+        train=True,
+        loader=default_loader,
+        target_transform=None,
+        transform=None,
+        download=False,
+    ):
         self.root = root
         self.train = train
         self.base_name = "cars"
@@ -68,7 +76,7 @@ class StanfordCars(VisionDataset):
         return img, target
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     dataset = StanfordCars(root=os.path.abspath("../../../../data/external/"))

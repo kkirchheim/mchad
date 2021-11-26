@@ -1,37 +1,36 @@
 import logging
 from typing import Any, List
 
-import torch
-from torch import nn
-import numpy as np
-from pytorch_lightning import LightningModule
 import hydra
+import numpy as np
+import torch
+from pytorch_lightning import LightningModule
+from torch import nn
 
 import src.utils.mine as myutils
-from src.utils.mine import save_embeddings, collect_outputs
 from osr.utils import is_known
 from src.utils.metrics import log_classification_metrics
+from src.utils.mine import save_embeddings, collect_outputs
 
 log = logging.getLogger(__name__)
 
 
 class MCHAD(LightningModule):
-    """
-    """
+    """ """
 
     def __init__(
-            self,
-            backbone: dict = None,
-            optimizer: dict = None,
-            scheduler: dict = None,
-            weight_center=1.0,
-            weight_oe=1.0,
-            weight_ce=1.0,
-            n_classes=10,
-            n_embedding=10,
-            radius=1.0,
-            pretrained=None,
-            **kwargs
+        self,
+        backbone: dict = None,
+        optimizer: dict = None,
+        scheduler: dict = None,
+        weight_center=1.0,
+        weight_oe=1.0,
+        weight_ce=1.0,
+        n_classes=10,
+        n_embedding=10,
+        radius=1.0,
+        pretrained=None,
+        **kwargs,
     ):
         super().__init__()
 
@@ -94,18 +93,30 @@ class MCHAD(LightningModule):
             # we are in multi-training-set mode
             batch = torch.cat([b[0] for b in batch]), torch.cat([b[1] for b in batch])
 
-        loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(batch)
+        loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(
+            batch
+        )
         x, y = batch
 
-        loss = self.weight_center * loss_center + self.weight_ce * loss_nll + self.weight_oe * loss_out
+        loss = (
+            self.weight_center * loss_center
+            + self.weight_ce * loss_nll
+            + self.weight_oe * loss_out
+        )
 
         self.log(name="Loss/loss_center/train", value=loss_center, on_step=True)
         self.log(name="Loss/loss_nll/train", value=loss_nll, on_step=True)
         self.log(name="Loss/loss_out/train", value=loss_out, on_step=True)
 
         # NOTE: we treat the negative distance as logits
-        return {"loss": loss, "preds": preds, "targets": targets, "dists": dists,
-                "embedding": embedding.cpu(), "points": x.cpu()}
+        return {
+            "loss": loss,
+            "preds": preds,
+            "targets": targets,
+            "dists": dists,
+            "embedding": embedding.cpu(),
+            "points": x.cpu(),
+        }
 
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
@@ -116,11 +127,25 @@ class MCHAD(LightningModule):
         images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, -dists)
-        save_embeddings(self, dists, embedding, images, targets, tag="train", centers=self.center_loss.centers)
+        save_embeddings(
+            self,
+            dists,
+            embedding,
+            images,
+            targets,
+            tag="train",
+            centers=self.center_loss.centers,
+        )
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(batch)
-        loss = self.weight_center * loss_center + self.weight_ce * loss_nll + self.weight_oe * loss_out
+        loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(
+            batch
+        )
+        loss = (
+            self.weight_center * loss_center
+            + self.weight_ce * loss_nll
+            + self.weight_oe * loss_out
+        )
         x, y = batch
 
         self.log(name="Loss/loss_center/val", value=loss_center)
@@ -134,8 +159,15 @@ class MCHAD(LightningModule):
             myutils.log_weight_hists(self)
 
         # NOTE: we treat the negative distance as logits
-        return {"loss": loss, "preds": preds, "targets": targets, "logits": -dists, "dists": dists,
-                "embedding": embedding.cpu(), "points": x.cpu()}
+        return {
+            "loss": loss,
+            "preds": preds,
+            "targets": targets,
+            "logits": -dists,
+            "dists": dists,
+            "embedding": embedding.cpu(),
+            "points": x.cpu(),
+        }
 
     def validation_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
@@ -149,19 +181,34 @@ class MCHAD(LightningModule):
         save_embeddings(self, dists, embedding, images, targets, tag="val")
 
         # save centers
-        save_embeddings(self,
-                        embedding=self.center_loss.centers,
-                        targets=np.arange(self.center_loss.centers.shape[0]),
-                        tag="centers")
+        save_embeddings(
+            self,
+            embedding=self.center_loss.centers,
+            targets=np.arange(self.center_loss.centers.shape[0]),
+            tag="centers",
+        )
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(batch)
-        loss = self.weight_center * loss_center + self.weight_ce * loss_nll + self.weight_oe * loss_out
+        loss_center, loss_nll, loss_out, preds, dists, targets, embedding = self.step(
+            batch
+        )
+        loss = (
+            self.weight_center * loss_center
+            + self.weight_ce * loss_nll
+            + self.weight_oe * loss_out
+        )
 
         x, y = batch
 
-        return {"loss": loss, "preds": preds, "targets": targets, "logits": -dists, "dists": dists,
-                "embedding": embedding.cpu(), "points": x.cpu()}
+        return {
+            "loss": loss,
+            "preds": preds,
+            "targets": targets,
+            "logits": -dists,
+            "dists": dists,
+            "embedding": embedding.cpu(),
+            "points": x.cpu(),
+        }
 
     def test_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
@@ -172,14 +219,15 @@ class MCHAD(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "test", targets, preds, -dists)
-        save_embeddings(self, dists, embedding, images, targets, tag=f"test-{self._test_epoch}")
+        save_embeddings(
+            self, dists, embedding, images, targets, tag=f"test-{self._test_epoch}"
+        )
         self._test_epoch += 1
 
     def configure_optimizers(self):
         opti = hydra.utils.instantiate(self.optimizer, params=self.parameters())
         sched = hydra.utils.instantiate(self.scheduler, optimizer=opti)
         return [opti], [sched]
-
 
 
 class MchadCenterLoss(nn.Module):
@@ -209,7 +257,7 @@ class MchadCenterLoss(nn.Module):
         mask = labels.eq(classes.expand(distmat.size(0), self.num_classes))
 
         dist = distmat * mask.float()
-        loss = dist.clamp(min=1e-12, max=1e+12).sum() / distmat.size(0)
+        loss = dist.clamp(min=1e-12, max=1e12).sum() / distmat.size(0)
 
         return loss
 

@@ -1,25 +1,31 @@
 """
 
 """
-from torchvision.datasets import ImageFolder
 import os
+
+from torchvision.datasets import ImageFolder
 
 from osr.dataset import OSRVisionDataset
 
 
 class Imagenet2012(ImageFolder):
-    def __init__(self, root, transform=None, target_transform=None, train=True, **kwargs):
+    def __init__(
+        self, root, transform=None, target_transform=None, train=True, **kwargs
+    ):
         if train:
             root = os.path.join(root, "train")
         else:
             root = os.path.join(root, "val")
-        super(Imagenet2012, self).__init__(root, transform=transform, target_transform=target_transform)
+        super(Imagenet2012, self).__init__(
+            root, transform=transform, target_transform=target_transform
+        )
 
 
 class Imagenet2012_64x64(OSRVisionDataset):
     """
     Downscaled version of the imagenet dataset
     """
+
     def __init__(self, root, **kwargs):
         super(Imagenet2012_64x64, self).__init__(root)
 

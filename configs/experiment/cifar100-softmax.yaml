@@ -17,6 +17,7 @@ defaults:
 
 seed: 12345
 deterministic: True
+n_classes: 100
 
 trainer:
   _target_: pytorch_lightning.Trainer
@@ -27,7 +28,7 @@ trainer:
 
 model:
   _target_: src.models.SoftMax
-  n_classes: 100
+  n_classes: ${n_classes}
   optimizer:
     _target_: torch.optim.Adam
     lr: 0.001
@@ -37,7 +38,7 @@ model:
     T_0: 100
   backbone:
     _target_: src.models.modules.wrn.WideResNet
-    num_classes: 100
+    num_classes: ${n_classes}
     widen_factor: 2
     depth: 40
     drop_rate: 0.3
@@ -66,7 +67,7 @@ callbacks:
     use_in_test: True
   mcd:
     _target_: src.callbacks.mcd.MonteCarloDropout
-    num_classes: 10
+    num_classes: ${n_classes}
     rounds: 30
     use_in_val: False
     use_in_test: True

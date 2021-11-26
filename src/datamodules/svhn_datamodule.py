@@ -1,24 +1,24 @@
-from typing import Optional, Tuple
-from torch.utils.data import random_split
-from torchvision.datasets import SVHN
 import logging
 from os.path import join
+from typing import Optional, Tuple
+
+from torchvision.datasets import SVHN
+
 from .base import MyBaseDataModule
 
 log = logging.getLogger(__name__)
 
 
 class SVHNDataModule(MyBaseDataModule):
-
     def __init__(
-            self,
-            data_dir: str = "data/",
-            train_val_split: Tuple[int, int, int] = (84_289, 5000),
-            batch_size: int = 128,
-            num_workers: int = 10,
-            pin_memory: bool = False,
-            data_order_seed: int = None,
-            **kwargs,
+        self,
+        data_dir: str = "data/",
+        train_val_split: Tuple[int, int, int] = (84_289, 5000),
+        batch_size: int = 128,
+        num_workers: int = 10,
+        pin_memory: bool = False,
+        data_order_seed: int = None,
+        **kwargs,
     ):
         super().__init__(batch_size, num_workers, pin_memory, **kwargs)
 
@@ -48,15 +48,14 @@ class SVHNDataModule(MyBaseDataModule):
             self.data_dir,
             split="train",
             transform=self.train_trans,
-            target_transform=self.target_transform
+            target_transform=self.target_transform,
         )
 
         self.data_test = SVHN(
             self.data_dir,
             split="test",
             transform=self.test_trans,
-            target_transform=self.target_transform
+            target_transform=self.target_transform,
         )
 
         self.data_val = self.data_test
-

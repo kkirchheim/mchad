@@ -6,7 +6,7 @@
 defaults:
   - override /trainer: null # override trainer to null so it's not loaded from main config defaults...
   - override /model: null
-  - override /datamodule: cifar10
+  - override /datamodule: cifar10-oe
   - override /callbacks: null
   - override /logger: default
   - override /testmodules: cifar10
@@ -19,6 +19,8 @@ trainer:
   gpus: 0
   min_epochs: 20
   max_epochs: 20
+  limit_train_batches: 784 # 392 batches x2
+  limit_val_batches: 80 # 392 batches x2
   weights_summary: null
 
 model:

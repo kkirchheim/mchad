@@ -1,8 +1,13 @@
-import pytorch_lightning as pl
 import logging
 
+import pytorch_lightning as pl
+
+from src.utils.metrics import (
+    log_osr_metrics,
+    log_uncertainty_metrics,
+    log_error_detection_metrics,
+)
 from src.utils.mine import TensorBuffer
-from src.utils.metrics import log_osr_metrics, log_uncertainty_metrics, log_error_detection_metrics
 from src.utils.mine import log_score_histogram
 
 log = logging.getLogger(__name__)
@@ -12,6 +17,7 @@ class DistanceThresholding(pl.callbacks.Callback):
     """
     Implements Softmax Thresholding
     """
+
     BUFFER_KEY = "distance"
     NAME = "Distance"
 
@@ -25,10 +31,18 @@ class DistanceThresholding(pl.callbacks.Callback):
         y = self.buffer["y"]
         min_dist, y_hat = self.buffer[DistanceThresholding.BUFFER_KEY].min(dim=1)
 
-        log_osr_metrics(pl_module, -min_dist, stage, y, method=DistanceThresholding.NAME)
-        log_uncertainty_metrics(pl_module, -min_dist, stage, y, -min_dist, method=DistanceThresholding.NAME)
-        log_error_detection_metrics(pl_module, -min_dist, stage, y, y_hat, method=DistanceThresholding.NAME)
-        log_score_histogram(pl_module, stage, min_dist.log(), y, y_hat, method=DistanceThresholding.NAME)
+        log_osr_metrics(
+            pl_module, -min_dist, stage, y, method=DistanceThresholding.NAME
+        )
+        log_uncertainty_metrics(
+            pl_module, -min_dist, stage, y, -min_dist, method=DistanceThresholding.NAME
+        )
+        log_error_detection_metrics(
+            pl_module, -min_dist, stage, y, y_hat, method=DistanceThresholding.NAME
+        )
+        log_score_histogram(
+            pl_module, stage, min_dist.log(), y, y_hat, method=DistanceThresholding.NAME
+        )
 
         # TODO: maybe dump somewhere
         self.buffer.clear()
@@ -43,17 +57,27 @@ class DistanceThresholding(pl.callbacks.Callback):
         if self.use_in_test:
             return self._eval_epoch_end(pl_module, "test", **kwargs)
 
-    def _eval_batch(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, stage):
+    def _eval_batch(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, stage
+    ):
         x, y = batch
         self.buffer.append(DistanceThresholding.BUFFER_KEY, outputs["dists"])
         self.buffer.append("y", y)
 
-    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_validation_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+    ):
         """Called when the validation batch ends."""
         if self.use_in_val:
-            self._eval_batch(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, "val")
+            self._eval_batch(
+                trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, "val"
+            )
 
-    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_test_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+    ):
         """Called when the test batch ends."""
         if self.use_in_test:
-            self._eval_batch(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, "test")
+            self._eval_batch(
+                trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, "test"
+            )

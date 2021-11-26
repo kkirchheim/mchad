@@ -12,12 +12,10 @@ from torchvision.datasets import MNIST as PTMNIST
 from torchvision.datasets import SVHN as PTSVHN
 
 
-
 class SVHN(Dataset):
-    """
-    """
+    """ """
 
-    def __init__( self, root: str, download: bool = False, **kwargs) -> None:
+    def __init__(self, root: str, download: bool = False, **kwargs) -> None:
         super(SVHN, self).__init__(root)
         dataset1 = PTSVHN(root, "train", download=download)
         dataset2 = PTSVHN(root, "test", download=download)
@@ -34,7 +32,7 @@ class SVHN(Dataset):
         img, target = self.dataset[index]
 
         if type(img) is not Image.Image:
-            img = Image.fromarray(img.numpy(), mode='L')
+            img = Image.fromarray(img.numpy(), mode="L")
 
         if self.transform is not None:
             img = self.transform(img)
@@ -53,8 +51,7 @@ class SVHN(Dataset):
 
 
 class CIFAR10(Dataset):
-    """
-    """
+    """ """
 
     def __init__(self, root: str, download: bool = False, **kwargs) -> None:
         super(CIFAR10, self).__init__(root)
@@ -73,7 +70,7 @@ class CIFAR10(Dataset):
         img, target = self.dataset[index]
 
         if type(img) is not Image.Image:
-            img = Image.fromarray(img.numpy(), mode='L')
+            img = Image.fromarray(img.numpy(), mode="L")
 
         if self.transform is not None:
             img = self.transform(img)
@@ -92,10 +89,9 @@ class CIFAR10(Dataset):
 
 
 class CIFAR100(Dataset):
-    """
-    """
+    """ """
 
-    def __init__( self, root: str, download: bool = False, **kwargs) -> None:
+    def __init__(self, root: str, download: bool = False, **kwargs) -> None:
         super(CIFAR100, self).__init__(root)
         dataset1 = PTCIFAR100(root, train=True, download=download)
         dataset2 = PTCIFAR100(root, train=False, download=download)
@@ -112,7 +108,7 @@ class CIFAR100(Dataset):
         img, target = self.dataset[index]
 
         if type(img) is not Image.Image:
-            img = Image.fromarray(img.numpy(), mode='L')
+            img = Image.fromarray(img.numpy(), mode="L")
 
         if self.transform is not None:
             img = self.transform(img)
@@ -131,10 +127,9 @@ class CIFAR100(Dataset):
 
 
 class MNIST(Dataset):
-    """
-    """
+    """ """
 
-    def __init__( self, root: str, download: bool = False, **kwargs) -> None:
+    def __init__(self, root: str, download: bool = False, **kwargs) -> None:
         super(MNIST, self).__init__(root)
         dataset1 = PTMNIST(root, train=True, download=download)
         dataset2 = PTMNIST(root, train=False, download=download)
@@ -151,7 +146,7 @@ class MNIST(Dataset):
         img, target = self.dataset[index]
 
         if type(img) is not Image.Image:
-            img = Image.fromarray(img.numpy(), mode='L')
+            img = Image.fromarray(img.numpy(), mode="L")
 
         if self.transform is not None:
             img = self.transform(img)
@@ -170,10 +165,9 @@ class MNIST(Dataset):
 
 
 class KMNIST(Dataset):
-    """
-    """
+    """ """
 
-    def __init__( self, root: str, download: bool = False, **kwargs) -> None:
+    def __init__(self, root: str, download: bool = False, **kwargs) -> None:
         super(KMNIST, self).__init__(root)
         dataset1 = PTKMNIST(root, train=True, download=download)
         dataset2 = PTKMNIST(root, train=False, download=download)
@@ -190,7 +184,7 @@ class KMNIST(Dataset):
         img, target = self.dataset[index]
 
         if type(img) is not Image.Image:
-            img = Image.fromarray(img.numpy(), mode='L')
+            img = Image.fromarray(img.numpy(), mode="L")
 
         if self.transform is not None:
             img = self.transform(img)
@@ -209,11 +203,9 @@ class KMNIST(Dataset):
 
 
 class FMNIST(Dataset):
-    """
+    """ """
 
-    """
-
-    def __init__( self, root: str, download: bool = False, **kwargs) -> None:
+    def __init__(self, root: str, download: bool = False, **kwargs) -> None:
         super(FMNIST, self).__init__(root)
         dataset1 = FashionMNIST(root, train=True, download=download)
         dataset2 = FashionMNIST(root, train=False, download=download)
@@ -230,7 +222,7 @@ class FMNIST(Dataset):
         img, target = self.dataset[index]
 
         if type(img) is not Image.Image:
-            img = Image.fromarray(img.numpy(), mode='L')
+            img = Image.fromarray(img.numpy(), mode="L")
 
         if self.transform is not None:
             img = self.transform(img)

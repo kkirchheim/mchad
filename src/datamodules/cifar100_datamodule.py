@@ -1,26 +1,24 @@
-from torchvision.datasets import CIFAR100
-from typing import Optional, Tuple
-from torch.utils.data import ConcatDataset, random_split
-import numpy as np
-from .base import MyBaseDataModule
 import logging
+from typing import Optional, Tuple
+
+import numpy as np
+from torchvision.datasets import CIFAR100
 
 from osr.ossim import TargetMapping
-
+from .base import MyBaseDataModule
 
 log = logging.getLogger(__name__)
 
 
 class CIFAR100DataModule(MyBaseDataModule):
-
     def __init__(
-            self,
-            data_dir: str = "data/",
-            train_val_test_split: Tuple[int, int, int] = (55_000, 5_000, 10_000),
-            batch_size: int = 128,
-            num_workers: int = 10,
-            pin_memory: bool = False,
-            **kwargs,
+        self,
+        data_dir: str = "data/",
+        train_val_test_split: Tuple[int, int, int] = (55_000, 5_000, 10_000),
+        batch_size: int = 128,
+        num_workers: int = 10,
+        pin_memory: bool = False,
+        **kwargs,
     ):
         super().__init__(batch_size, num_workers, pin_memory, **kwargs)
 
@@ -38,7 +36,7 @@ class CIFAR100DataModule(MyBaseDataModule):
         self.mapping = TargetMapping(
             train_in_classes=train_in,
             train_out_classes=train_out,
-            test_out_classes=test_out
+            test_out_classes=test_out,
         )
 
     @property
@@ -59,7 +57,7 @@ class CIFAR100DataModule(MyBaseDataModule):
             self.data_dir,
             train=True,
             transform=self.train_trans,
-            target_transform=self.target_transform
+            target_transform=self.target_transform,
         )
         # self.data_train, self.data_val = random_split(train_set, self.train_val_split, generator=self.split_generator)
         self.data_train = train_set
@@ -68,7 +66,7 @@ class CIFAR100DataModule(MyBaseDataModule):
             self.data_dir,
             train=False,
             transform=self.test_trans,
-            target_transform=self.target_transform
+            target_transform=self.target_transform,
         )
 
         self.data_val = self.data_test

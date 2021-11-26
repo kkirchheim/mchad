@@ -1,11 +1,16 @@
-import pytorch_lightning as pl
 import logging
 import time
+
+import pytorch_lightning as pl
 import torch
 
-from src.utils.mine import TensorBuffer
-from src.utils.metrics import log_osr_metrics, log_uncertainty_metrics, log_error_detection_metrics
 from osr.openmax import OpenMax as OpenMaxLayer
+from src.utils.metrics import (
+    log_osr_metrics,
+    log_uncertainty_metrics,
+    log_error_detection_metrics,
+)
+from src.utils.mine import TensorBuffer
 
 log = logging.getLogger(__name__)
 
@@ -17,10 +22,19 @@ class OpenMax(pl.callbacks.Callback):
 
     Requires that the used module has an eval-tensor-buffer and a train-tensor-buffer.
     """
+
     LOGITS_BUFFER_KEY = "openmax"
     NAME = "OpenMax"
 
-    def __init__(self, tailsize, alpha, euclid_weight, use_in_val=True, use_in_test=True, **kwargs):
+    def __init__(
+        self,
+        tailsize,
+        alpha,
+        euclid_weight,
+        use_in_val=True,
+        use_in_test=True,
+        **kwargs,
+    ):
         self.tailsize = tailsize
         self.euclid_weight = euclid_weight
         self.alpha = alpha
@@ -28,10 +42,16 @@ class OpenMax(pl.callbacks.Callback):
         self.use_in_test = use_in_test
         self.buffer = TensorBuffer()  # buffer used during evaluation
         self.train_buffer = TensorBuffer()  # buffer for training data
-        self.layer = OpenMaxLayer(tailsize=tailsize, alpha=alpha, euclid_weight=euclid_weight)
-        log.info(f"OpenMax parameters: tail={tailsize} alpha={alpha} euclid_weight={euclid_weight}")
+        self.layer = OpenMaxLayer(
+            tailsize=tailsize, alpha=alpha, euclid_weight=euclid_weight
+        )
+        log.info(
+            f"OpenMax parameters: tail={tailsize} alpha={alpha} euclid_weight={euclid_weight}"
+        )
 
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx: int, dataloader_idx: int) -> None:
+    def on_train_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx: int, dataloader_idx: int
+    ) -> None:
         """Called when the train batch ends."""
         self.train_buffer.append(OpenMax.LOGITS_BUFFER_KEY, outputs["logits"])
         self.train_buffer.append("y", outputs["targets"])
@@ -65,8 +85,12 @@ class OpenMax(pl.callbacks.Callback):
         confidence_openmax = torch.tensor(confidence_openmax)
 
         log_osr_metrics(pl_module, confidence_openmax, stage, y, method=OpenMax.NAME)
-        log_uncertainty_metrics(pl_module, confidence_openmax, stage, y, y_hat, method=OpenMax.NAME)
-        log_error_detection_metrics(pl_module, confidence_openmax, stage, y, y_hat, method=OpenMax.NAME)
+        log_uncertainty_metrics(
+            pl_module, confidence_openmax, stage, y, y_hat, method=OpenMax.NAME
+        )
+        log_error_detection_metrics(
+            pl_module, confidence_openmax, stage, y, y_hat, method=OpenMax.NAME
+        )
 
         # TODO: maybe dump somewhere
         self.buffer.clear()
@@ -85,17 +109,27 @@ class OpenMax(pl.callbacks.Callback):
         if self.use_in_test:
             return self._eval_epoch_end(pl_module, "test", **kwargs)
 
-    def _eval_batch(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, stage):
+    def _eval_batch(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, stage
+    ):
         self.buffer.append(OpenMax.LOGITS_BUFFER_KEY, outputs["logits"])
         self.buffer.append("y", outputs["targets"])
         self.buffer.append("y_hat", outputs["preds"])
 
-    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_validation_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+    ):
         """Called when the validation batch ends."""
         if self.use_in_val:
-            self._eval_batch(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, "val")
+            self._eval_batch(
+                trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, "val"
+            )
 
-    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_test_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+    ):
         """Called when the test batch ends."""
         if self.use_in_test:
-            self._eval_batch(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, "test")
+            self._eval_batch(
+                trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, "test"
+            )

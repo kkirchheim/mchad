@@ -5,13 +5,13 @@ import abc
 
 import numpy as np
 from torch.utils.data import Dataset
-from torchvision.datasets import VisionDataset
 
 
 class OSRDataset(Dataset):
     """
     A Basic Dataset
     """
+
     def __init__(self):
         super(OSRDataset, self).__init__()
         self.target_transform = None

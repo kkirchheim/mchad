@@ -1,11 +1,10 @@
 import logging
 import os
 from typing import Tuple
-import numpy as np
-from torch.utils.data import Dataset, ConcatDataset
-from torchvision.datasets.utils import download_url
 
-from osr.dataset import OSRDataset
+import numpy as np
+from torch.utils.data import Dataset
+from torchvision.datasets.utils import download_url
 
 from osr.dataset.text.stop_words import stop_words
 
@@ -19,8 +18,13 @@ class Reuters52(Dataset):
     Much of the code is taken from the baseline-implementation:
     https://github.com/hendrycks/error-detection/blob/master/NLP/Categorization/Reuters52.ipynb
     """
-    train_url = "https://www.cs.umb.edu/~smimarog/textmining/datasets/r52-train-stemmed.txt"
-    test_url = "https://www.cs.umb.edu/~smimarog/textmining/datasets/r52-test-stemmed.txt"
+
+    train_url = (
+        "https://www.cs.umb.edu/~smimarog/textmining/datasets/r52-train-stemmed.txt"
+    )
+    test_url = (
+        "https://www.cs.umb.edu/~smimarog/textmining/datasets/r52-test-stemmed.txt"
+    )
 
     test_md5 = "e29d9f65d622f926dee08a6a87b2277a"
     train_md5 = "f115a957fbbf050a81d38ca08500e5c3"
@@ -28,16 +32,64 @@ class Reuters52(Dataset):
     train_filename = "r52-train-stemmed.txt"
     test_filename = "r52-test-stemmed.txt"
 
-    class2index = {"acq": 0, "alum": 1, "bop": 2, "carcass": 3, "cocoa": 4, "coffee": 5, "copper": 6,
-                    "cotton": 7, "cpi": 8, "cpu": 9, "crude": 10, "dlr": 11, "earn": 12, "fuel": 13, "gas": 14,
-                    "gnp": 15, "gold": 16, "grain": 17, "heat": 18, "housing": 19, "income": 20, "instal-debt": 21,
-                    "interest": 22, "ipi": 23, "iron-steel": 24, "jet": 25, "jobs": 26, "lead": 27, "lei": 28,
-                    "livestock": 29, "lumber": 30, "meal-feed": 31, "money-fx": 32, "money-supply": 33,
-                    "nat-gas": 34, "nickel": 35, "orange": 36, "pet-chem": 37, "platinum": 38, "potato": 39,
-                    "reserves": 40, "retail": 41, "rubber": 42, "ship": 43, "strategic-metal": 44, "sugar": 45,
-                    "tea": 46, "tin": 47, "trade": 48, "veg-oil": 49, "wpi": 50, "zinc": 51}
+    class2index = {
+        "acq": 0,
+        "alum": 1,
+        "bop": 2,
+        "carcass": 3,
+        "cocoa": 4,
+        "coffee": 5,
+        "copper": 6,
+        "cotton": 7,
+        "cpi": 8,
+        "cpu": 9,
+        "crude": 10,
+        "dlr": 11,
+        "earn": 12,
+        "fuel": 13,
+        "gas": 14,
+        "gnp": 15,
+        "gold": 16,
+        "grain": 17,
+        "heat": 18,
+        "housing": 19,
+        "income": 20,
+        "instal-debt": 21,
+        "interest": 22,
+        "ipi": 23,
+        "iron-steel": 24,
+        "jet": 25,
+        "jobs": 26,
+        "lead": 27,
+        "lei": 28,
+        "livestock": 29,
+        "lumber": 30,
+        "meal-feed": 31,
+        "money-fx": 32,
+        "money-supply": 33,
+        "nat-gas": 34,
+        "nickel": 35,
+        "orange": 36,
+        "pet-chem": 37,
+        "platinum": 38,
+        "potato": 39,
+        "reserves": 40,
+        "retail": 41,
+        "rubber": 42,
+        "ship": 43,
+        "strategic-metal": 44,
+        "sugar": 45,
+        "tea": 46,
+        "tin": 47,
+        "trade": 48,
+        "veg-oil": 49,
+        "wpi": 50,
+        "zinc": 51,
+    }
 
-    def __init__(self, root, transform=None, target_transform=None, train=True, download=True):
+    def __init__(
+        self, root, transform=None, target_transform=None, train=True, download=True
+    ):
         """
         TODO: add support for custom loader?
         """
@@ -92,7 +144,7 @@ class Reuters52(Dataset):
         with open(filename, "r") as f:
             for line in f:
                 words = line.split()
-                text = ' '.join(word for word in words[2:] if word not in stop_words)
+                text = " ".join(word for word in words[2:] if word not in stop_words)
                 x.append(text)
                 targets.append(".".join(words[0:2]))
 
@@ -127,4 +179,3 @@ if __name__ == "__main__":
     root = os.path.expanduser(os.path.join("~", ".cache", "osr"))
     dataset = Reuters52(root, download=True)
     pass
-

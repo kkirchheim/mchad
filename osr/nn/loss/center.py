@@ -1,8 +1,8 @@
 import logging
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 
 log = logging.getLogger(__name__)
 
@@ -55,8 +55,15 @@ class CenterLoss(nn.Module):
         :param labels: ground truth labels with shape (batch_size).
         """
         batch_size = x.size(0)
-        distmat = torch.pow(x, 2).sum(dim=1, keepdim=True).expand(batch_size, self.num_classes) + \
-                  torch.pow(self.centers, 2).sum(dim=1, keepdim=True).expand(self.num_classes, batch_size).t()
+        distmat = (
+            torch.pow(x, 2)
+            .sum(dim=1, keepdim=True)
+            .expand(batch_size, self.num_classes)
+            + torch.pow(self.centers, 2)
+            .sum(dim=1, keepdim=True)
+            .expand(self.num_classes, batch_size)
+            .t()
+        )
         distmat.addmm_(1, -2, x, self.centers.t())
 
         classes = torch.arange(self.num_classes).long().to(x.device)
@@ -64,7 +71,7 @@ class CenterLoss(nn.Module):
         mask = labels.eq(classes.expand(batch_size, self.num_classes))
 
         dist = distmat * mask.float()
-        loss = dist.clamp(min=1e-12, max=1e+12).sum() / batch_size
+        loss = dist.clamp(min=1e-12, max=1e12).sum() / batch_size
 
         return loss
 
@@ -80,7 +87,7 @@ class CenterLoss(nn.Module):
 
     @staticmethod
     def pairwise_distances(x, y=None):
-        '''
+        """
         Input: x is a Nxd matrix
                y is an optional Mxd matirx
         Output: dist is a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
@@ -89,7 +96,7 @@ class CenterLoss(nn.Module):
         See https://discuss.pytorch.org/t/efficient-distance-matrix-computation/9065/3
 
         i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
-        '''
+        """
         x_norm = (x ** 2).sum(1).view(-1, 1)
         if y is not None:
             y_t = torch.transpose(y, 0, 1)

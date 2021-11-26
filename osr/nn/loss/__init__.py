@@ -39,4 +39,3 @@ from .center import CenterLoss
 from .conf import ConfidenceLoss
 from .ii import IILoss
 from .triplet import TripletLoss
-

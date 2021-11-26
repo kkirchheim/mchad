@@ -1,11 +1,9 @@
-
+import numpy as np
 import torch as torch
 import torch.nn as nn
+
 #
 from torch.nn import functional as F
-import numpy as np
-
-import osr.utils
 
 
 class CACLoss(nn.Module):
@@ -46,7 +44,7 @@ class CACLoss(nn.Module):
         return self.anchors
 
     def _init_centers(self):
-        """Init anchors with 1, scale by """
+        """Init anchors with 1, scale by"""
         nn.init.eye_(self.anchors)
         self.anchors.requires_grad = False
         self.anchors *= self.magnitude  # scale with magnitude
@@ -56,19 +54,24 @@ class CACLoss(nn.Module):
         :param embedding: embeddings of samples
         :param target: labels for samples
         """
-        assert (embedding.shape[1] == self.n_classes)
+        assert embedding.shape[1] == self.n_classes
 
         distances = self.calculate_distances(embedding)
         d_true = torch.gather(input=distances, dim=1, index=target.view(-1, 1)).view(-1)
         anchor_loss = d_true.mean()
 
         # calc distances to all non_target tensors
-        tmp = [[i for i in range(self.n_classes) if target[x] != i] for x in range(len(distances))]
+        tmp = [
+            [i for i in range(self.n_classes) if target[x] != i]
+            for x in range(len(distances))
+        ]
         non_target = torch.Tensor(tmp).long().to(embedding.device)
         d_other = torch.gather(distances, 1, non_target)
 
         # for numerical stability, we clamp the distance values
-        tuplet_loss = (-d_other + d_true.unsqueeze(1)).clamp(max=50).exp()  # torch.exp()
+        tuplet_loss = (
+            (-d_other + d_true.unsqueeze(1)).clamp(max=50).exp()
+        )  # torch.exp()
         tuplet_loss = torch.log(1 + torch.sum(tuplet_loss, dim=1)).mean()
 
         return self.lambda_ * anchor_loss, tuplet_loss
@@ -104,7 +107,7 @@ def rejection_score(distance):
 
 
 def pairwise_distances(x, y=None):
-    '''
+    """
     Input: x is a Nxd matrix
            y is an optional Mxd matirx
     Output: dist is a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
@@ -113,7 +116,7 @@ def pairwise_distances(x, y=None):
     See https://discuss.pytorch.org/t/efficient-distance-matrix-computation/9065/3
 
     i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
-    '''
+    """
     x_norm = (x ** 2).sum(1).view(-1, 1)
     if y is not None:
         y_t = torch.transpose(y, 0, 1)

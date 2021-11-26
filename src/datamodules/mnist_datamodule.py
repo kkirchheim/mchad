@@ -1,27 +1,26 @@
+import logging
 from typing import Optional, Tuple
+
+import numpy as np
 from torch.utils.data import ConcatDataset, random_split
 from torchvision.datasets import MNIST
-import numpy as np
-from .base import MyBaseDataModule
-import logging
 
 from osr.ossim import TargetMapping
-
+from .base import MyBaseDataModule
 
 log = logging.getLogger(__name__)
 
 
 class MNISTDataModule(MyBaseDataModule):
-
     def __init__(
-            self,
-            data_dir: str = "data/",
-            train_val_test_split: Tuple[int, int, int] = (55_000, 5_000, 10_000),
-            batch_size: int = 128,
-            num_workers: int = 10,
-            pin_memory: bool = False,
-            data_order_seed: int = 1234,
-            **kwargs,
+        self,
+        data_dir: str = "data/",
+        train_val_test_split: Tuple[int, int, int] = (55_000, 5_000, 10_000),
+        batch_size: int = 128,
+        num_workers: int = 10,
+        pin_memory: bool = False,
+        data_order_seed: int = 1234,
+        **kwargs,
     ):
         super().__init__(batch_size, num_workers, pin_memory, **kwargs)
 
@@ -39,7 +38,7 @@ class MNISTDataModule(MyBaseDataModule):
         self.mapping = TargetMapping(
             train_in_classes=train_in,
             train_out_classes=train_out,
-            test_out_classes=test_out
+            test_out_classes=test_out,
         )
 
     @property
@@ -57,11 +56,20 @@ class MNISTDataModule(MyBaseDataModule):
         log.info(f"Datamodule setup")
         super().setup()
 
-        trainset = MNIST(self.data_dir, train=True, transform=self.transforms, target_transform=self.mapping)
-        testset = MNIST(self.data_dir, train=False, transform=self.transforms, target_transform=self.mapping)
+        trainset = MNIST(
+            self.data_dir,
+            train=True,
+            transform=self.transforms,
+            target_transform=self.mapping,
+        )
+        testset = MNIST(
+            self.data_dir,
+            train=False,
+            transform=self.transforms,
+            target_transform=self.mapping,
+        )
         dataset = ConcatDataset(datasets=[trainset, testset])
 
         self.data_train, self.data_val, self.data_test = random_split(
             dataset, self.train_val_test_split
         )
-

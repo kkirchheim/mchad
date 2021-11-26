@@ -1,19 +1,15 @@
 import logging
 from typing import Any, List
 
-import torch
-from torch import nn
-from pytorch_lightning import LightningModule
 import hydra
+import torch
+from pytorch_lightning import LightningModule
+from torch import nn
 
-import src.utils.mine as myutils
-from osr.utils import is_known
 from osr.nn.loss import CenterLoss
-from src.utils.mine import save_embeddings, collect_outputs
-
+from osr.utils import is_known
 from src.utils.metrics import log_classification_metrics
-from src.utils.mine import create_metadata
-
+from src.utils.mine import save_embeddings, collect_outputs
 
 log = logging.getLogger(__name__)
 
@@ -26,15 +22,15 @@ class Center(LightningModule):
     """
 
     def __init__(
-            self,
-            optimizer: dict = None,
-            scheduler: dict = None,
-            backbone: dict = None,
-            weight_center=1.0,
-            pretrained=None,
-            n_classes=10,
-            n_embedding=10,
-            **kwargs
+        self,
+        optimizer: dict = None,
+        scheduler: dict = None,
+        backbone: dict = None,
+        weight_center=1.0,
+        pretrained=None,
+        n_classes=10,
+        n_embedding=10,
+        **kwargs,
     ):
         super().__init__()
 
@@ -89,8 +85,14 @@ class Center(LightningModule):
         self.log(name="Loss/loss_nll/train", value=loss_nll, on_step=True)
 
         # NOTE: we treat the negative distance as logits
-        return {"loss": loss, "preds": preds, "targets": targets, "logits": logits,
-                "embedding": embedding.cpu(), "points": x.cpu()}
+        return {
+            "loss": loss,
+            "preds": preds,
+            "targets": targets,
+            "logits": logits,
+            "embedding": embedding.cpu(),
+            "points": x.cpu(),
+        }
 
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
@@ -101,7 +103,9 @@ class Center(LightningModule):
         images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, logits)
-        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
+        save_embeddings(
+            self, embedding=embedding, images=images, targets=targets, tag="val"
+        )
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)
@@ -114,8 +118,14 @@ class Center(LightningModule):
 
         x, y = batch
         # NOTE: we treat the negative distance as logits
-        return {"loss": loss, "preds": preds, "targets": targets, "logits": logits,
-                "embedding": embedding.cpu(), "points": x.cpu()}
+        return {
+            "loss": loss,
+            "preds": preds,
+            "targets": targets,
+            "logits": logits,
+            "embedding": embedding.cpu(),
+            "points": x.cpu(),
+        }
 
     def validation_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
@@ -126,7 +136,9 @@ class Center(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "val", targets, preds, logits)
-        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
+        save_embeddings(
+            self, embedding=embedding, images=images, targets=targets, tag="val"
+        )
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)
@@ -134,8 +146,14 @@ class Center(LightningModule):
 
         x, y = batch
 
-        return {"loss": loss, "preds": preds, "targets": targets, "logits": logits,
-                "embedding": embedding.cpu(), "points": x.cpu()}
+        return {
+            "loss": loss,
+            "preds": preds,
+            "targets": targets,
+            "logits": logits,
+            "embedding": embedding.cpu(),
+            "points": x.cpu(),
+        }
 
     def test_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
@@ -146,11 +164,16 @@ class Center(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "test", targets, preds, logits)
-        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag=f"test-{self._test_epoch}")
+        save_embeddings(
+            self,
+            embedding=embedding,
+            images=images,
+            targets=targets,
+            tag=f"test-{self._test_epoch}",
+        )
         self._test_epoch += 1
 
     def configure_optimizers(self):
         opti = hydra.utils.instantiate(self.optimizer, params=self.parameters())
         sched = hydra.utils.instantiate(self.scheduler, optimizer=opti)
         return [opti], [sched]
-

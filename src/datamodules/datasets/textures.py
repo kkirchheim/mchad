@@ -1,12 +1,11 @@
 import logging
-from typing import Optional, Callable, Tuple, Any
-
-from torchvision.datasets import VisionDataset
-from torchvision.datasets.utils import download_and_extract_archive, check_integrity
 import os
 from os.path import join
-from PIL import Image
+from typing import Optional, Callable, Tuple, Any
 
+from PIL import Image
+from torchvision.datasets import VisionDataset
+from torchvision.datasets.utils import download_and_extract_archive, check_integrity
 
 log = logging.getLogger(__name__)
 
@@ -20,31 +19,42 @@ class Textures(VisionDataset):
     See: https://arxiv.org/abs/1311.3618v2
 
     """
-    base_folder = 'dtd/images/'
+
+    base_folder = "dtd/images/"
     url = "https://www.robots.ox.ac.uk/~vgg/data/dtd/download/dtd-r1.0.1.tar.gz"
     filename = "textures-r1_0_1.tar.gz"
-    tgz_md5 = 'fff73e5086ae6bdbea199a49dfb8a4c1'
+    tgz_md5 = "fff73e5086ae6bdbea199a49dfb8a4c1"
 
     def __init__(
-            self,
-            root: str,
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            download: bool = False,
+        self,
+        root: str,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
-        super(Textures, self).__init__(root, transform=transform, target_transform=target_transform)
+        super(Textures, self).__init__(
+            root, transform=transform, target_transform=target_transform
+        )
 
         if download:
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError('Dataset not found or corrupted.' +
-                               ' You can use download=True to download it')
+            raise RuntimeError(
+                "Dataset not found or corrupted."
+                + " You can use download=True to download it"
+            )
 
         self.basedir = os.path.join(self.root, self.base_folder)
         self.files = []
         for d in os.listdir(self.basedir):
-            self.files.extend([join(d, f) for f in os.listdir(join(self.basedir, d)) if not f.startswith(".")])
+            self.files.extend(
+                [
+                    join(d, f)
+                    for f in os.listdir(join(self.basedir, d))
+                    if not f.startswith(".")
+                ]
+            )
 
         log.info(f"Found {len(self.files)} texture files.")
 
@@ -81,9 +91,11 @@ class Textures(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            log.debug('Files already downloaded and verified')
+            log.debug("Files already downloaded and verified")
             return
-        download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.tgz_md5)
+        download_and_extract_archive(
+            self.url, self.root, filename=self.filename, md5=self.tgz_md5
+        )
 
     def extra_repr(self) -> str:
         return "Split: {}".format("Train" if self.train is True else "Test")
@@ -91,4 +103,3 @@ class Textures(VisionDataset):
     @property
     def train(self):
         return False
-

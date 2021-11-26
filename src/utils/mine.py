@@ -5,23 +5,21 @@ Common functions accessed by other modules
 """
 import json
 import logging
-import os
 import sys
 import time
 import types
+from collections import defaultdict
 from os.path import join
+from typing import List, Any
 
 import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.optim.lr_scheduler as scheduler
-from omegaconf import DictConfig
 from omegaconf import OmegaConf
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers.base import LoggerCollection
 from torch.utils.data import Subset
-from collections import defaultdict
-from typing import List, Any
 
 from osr.utils import is_known, is_unknown, contains_known, contains_unknown
 
@@ -56,6 +54,7 @@ def configure_logging(path=None, stderr=False):
 # Creating object from configuration
 ###################################################
 
+
 def create_optimizer(config, parameter):
     """
     @param config:
@@ -71,12 +70,21 @@ def create_optimizer(config, parameter):
         if isinstance(parameter, (list, types.GeneratorType)):
             opti = torch.optim.Adam(parameter, lr=lr, weight_decay=weight_decay)
         else:
-            opti = torch.optim.Adam(parameter.parameters(), lr=lr, weight_decay=weight_decay)
+            opti = torch.optim.Adam(
+                parameter.parameters(), lr=lr, weight_decay=weight_decay
+            )
     elif name == "sgd":
         if isinstance(parameter, (list, types.GeneratorType)):
-            opti = torch.optim.SGD(parameter, lr=lr, weight_decay=weight_decay, momentum=momentum)
+            opti = torch.optim.SGD(
+                parameter, lr=lr, weight_decay=weight_decay, momentum=momentum
+            )
         else:
-            opti = torch.optim.SGD(parameter.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
+            opti = torch.optim.SGD(
+                parameter.parameters(),
+                lr=lr,
+                weight_decay=weight_decay,
+                momentum=momentum,
+            )
     else:
         raise ValueError(f"Unknown Optimizer: {name}")
 
@@ -85,7 +93,9 @@ def create_optimizer(config, parameter):
 
 def create_scheduler(config, optimizer):
     if config["name"] == "MultiStepLR":
-        return scheduler.MultiStepLR(optimizer, milestones=config["milestones"], gamma=config["gamma"])
+        return scheduler.MultiStepLR(
+            optimizer, milestones=config["milestones"], gamma=config["gamma"]
+        )
     elif config["name"] == "ExponentialLR":
         return scheduler.ExponentialLR(optimizer, gamma=config["gamma"])
     elif config["name"] == "CosineAnnealingLR":
@@ -97,6 +107,7 @@ def create_scheduler(config, optimizer):
 #######################################################
 # Helpers for loading and saving
 #######################################################
+
 
 def save_pipeline(directory, pipeline, train):
     if train:
@@ -158,58 +169,10 @@ def get_dataset(loader):
         return dataset
 
 
-def get_dumpfile(model: pl.LightningModule, stage: str):
-    """
-    Get the filename under which the results for a certain stage should be stored, like embeddings etc.
-    We try to guess which dataset is currently being processed to include this into the filename. In order for this to
-    work, the dataset has to have a "name" attribute, and "train" "test" or "val" have to be passed. Otherwise, we will
-    use the given stage name.
-
-    :param model:
-    :param stage: name of the stage the model is currently in.
-    :return:
-    """
-    if model.logger is not None:
-        logger = get_tb_logger(model.logger)
-        if stage == "train" or stage == "val":
-            # use tensorboards directory structure
-            root = join(logger.log_dir, f"{model.current_epoch:05d}")
-            os.makedirs(root, exist_ok=True)
-        else:
-            root = logger.log_dir
-    else:
-        try:
-            import ray.tune
-            root = ray.tune.get_trial_dir()
-            if root is None:
-                log.warning("Logging to .")
-                root = "."
-        except Exception as e:
-            log.exception(e)
-            root = "."
-
-    # TODO: this might lead to errors during testing on noise?
-    if stage == "test":
-        dataset = get_dataset(model.test_dataloader())
-    elif stage == "val":
-        dataset = get_dataset(model.val_dataloader())
-    elif stage == "train":
-        dataset = get_dataset(model.train_dataloader())
-    else:
-        dataset = None
-
-    if hasattr(dataset, "name"):
-        dataset_name = getattr(dataset, "name")
-        filename = f"dump-{stage}-{dataset_name}.pt"
-    else:
-        filename = f"dump-{stage}.pt"
-
-    return join(root, filename)
-
-
 ###################################################
 # Helpers for logging to tensorboard/loggers
 ###################################################
+
 
 def find_tensorboard(obj):
     """
@@ -251,9 +214,7 @@ def log_weight_hists(model: pl.LightningModule):
 
     for name, param in model.named_parameters():
         find_tensorboard(model.logger).add_histogram(
-            tag=f"weights/{name}",
-            values=param,
-            global_step=model.global_step
+            tag=f"weights/{name}", values=param, global_step=model.global_step
         )
 
 
@@ -266,7 +227,7 @@ def log_grad_hists(model: pl.LightningModule):
             find_tensorboard(model.logger).add_histogram(
                 tag=f"gradients/{name}",
                 values=param.grad,
-                global_step=model.global_step
+                global_step=model.global_step,
             )
 
 
@@ -295,19 +256,20 @@ def log_score_histogram(model, stage, score, y, y_hat, method=None):
                 writer.add_histogram(
                     tag=f"{prefix}/known/correct",
                     values=score[known & correct],
-                    global_step=epoch)
+                    global_step=epoch,
+                )
 
             if (known & incorrect).any() and not np.isnan(score).any():
                 writer.add_histogram(
                     tag=f"{prefix}/known/incorrect",
                     values=score[known & incorrect],
-                    global_step=epoch)
+                    global_step=epoch,
+                )
 
         if contains_unknown(y) and not np.isnan(score).any():
             writer.add_histogram(
-                tag=f"{prefix}/unknown",
-                values=score[unknown],
-                global_step=epoch)
+                tag=f"{prefix}/unknown", values=score[unknown], global_step=epoch
+            )
 
 
 def create_metadata(known, labels, distance=None, centers=None):
@@ -316,70 +278,15 @@ def create_metadata(known, labels, distance=None, centers=None):
     """
     if distance is not None:
         header = ["label", "known", "distance"]
-        data = [[str(l.item()), str(k.item()), str(d.item())] for k, l, d in zip(known, labels, distance)]
+        data = [
+            [str(l.item()), str(k.item()), str(d.item())]
+            for k, l, d in zip(known, labels, distance)
+        ]
     else:
         header = ["label", "known"]
         data = [[str(l.item()), str(k.item())] for k, l in zip(known, labels)]
 
     return header, data
-
-
-####################################################
-# MISC
-####################################################
-
-
-def _rek_get_hypers(dictionary, obj, current_key):
-    """
-
-    """
-    # if the given object is a dictionary, process all of its children
-    if isinstance(obj, (dict, DictConfig)):
-        for key, next_obj in obj.items():
-            next_key = f"{current_key}.{key}"
-            _rek_get_hypers(dictionary, next_obj, next_key)
-    # if it is not (i.e.) it is a single value/list, we add it
-    else:
-        dictionary[current_key] = obj
-
-
-def get_hypers(arch_config, optimizer_config, scheduler_config, **kwargs) -> dict:
-    """
-    Extract hyperparameters to log from the given configs.
-
-    Some people would argue that we could implement this as a single function without
-    sife effects if we used a return value instead of passing a "result"-like object, but we suspect that this
-    is more performant because we do not have to create a new dict in every recoursion step.
-    """
-    hypers = dict()
-    _rek_get_hypers(hypers, arch_config, "architecture")
-    _rek_get_hypers(hypers, optimizer_config, "optimizer")
-    _rek_get_hypers(hypers, scheduler_config, "scheduler")
-
-    for key, value in kwargs.items():
-        _rek_get_hypers(hypers, value, key)
-
-    return hypers
-
-
-def set_transformer(dataset, pipeline, target_mapping=None):
-    if type(dataset) is Subset:
-        log.info("Setting transformer on subset")
-        set_transformer(dataset.dataset, pipeline, target_mapping)
-        return
-
-    if hasattr(dataset, "transforms"):
-        log.info("Setting transformer")
-        dataset.transforms = pipeline
-    if hasattr(dataset, "transform"):
-        log.info("Setting transformer")
-        dataset.transform = pipeline
-
-    if target_mapping is not None:
-        if not hasattr(dataset, "target_transform"):
-            raise ValueError("Dataset does not have target_transform attribute")
-
-        dataset.target_transform = target_mapping
 
 
 class ContextGuard:
@@ -470,6 +377,7 @@ class TensorBuffer:
 
 ##################################################
 
+
 def collect_outputs(outputs: List[Any], key) -> torch.Tensor:
     """
     Collect outputs for model with multiple dataloaders
@@ -498,7 +406,16 @@ def collect_outputs(outputs: List[Any], key) -> torch.Tensor:
         return torch.cat([output[key] for output in outputs])
 
 
-def save_embeddings(pl_model, dists=None, embedding=None, images=None, targets=None, centers=None, tag="default", limit=5000):
+def save_embeddings(
+    pl_model,
+    dists=None,
+    embedding=None,
+    images=None,
+    targets=None,
+    centers=None,
+    tag="default",
+    limit=5000,
+):
     # limit number of saved entries so tensorboard does not crash because of too many sprites
     log.info(f"Saving embeddings")
 
@@ -507,7 +424,7 @@ def save_embeddings(pl_model, dists=None, embedding=None, images=None, targets=N
         is_known(targets[indexes]),
         targets[indexes],
         distance=None if dists is None else torch.min(dists[indexes], dim=1)[0],
-        centers=centers
+        centers=centers,
     )
 
     find_tensorboard(pl_model).add_embedding(
@@ -516,4 +433,5 @@ def save_embeddings(pl_model, dists=None, embedding=None, images=None, targets=N
         global_step=pl_model.global_step,
         metadata_header=header,
         label_img=None if images is None else images[indexes],
-        tag=tag)
+        tag=tag,
+    )

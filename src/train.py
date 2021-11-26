@@ -2,6 +2,7 @@ import os
 from typing import List, Optional
 
 import hydra
+import pandas as pd
 import torch
 from omegaconf import DictConfig
 from pytorch_lightning import (
@@ -12,7 +13,6 @@ from pytorch_lightning import (
     seed_everything,
 )
 from pytorch_lightning.loggers import LightningLoggerBase
-import pandas as pd
 
 from src.utils import utils
 
@@ -45,7 +45,9 @@ def train(config: DictConfig) -> Optional[float]:
 
         # Init Lightning datamodule
         log.info(f"Instantiating training datamodule <{config.datamodule._target_}>")
-        datamodule: LightningDataModule = hydra.utils.instantiate(config.datamodule, _recursive_=False, _convert_="partial")
+        datamodule: LightningDataModule = hydra.utils.instantiate(
+            config.datamodule, _recursive_=False, _convert_="partial"
+        )
 
         # Create datamodules for testing
         testmodules: List[LightningDataModule] = {"default": datamodule}
@@ -53,12 +55,16 @@ def train(config: DictConfig) -> Optional[float]:
             for test_case_name, test_conf in config["testmodules"].items():
                 if "_target_" in test_conf:
                     log.info(f"Instantiating testmodule <{test_conf._target_}>")
-                    test_module = hydra.utils.instantiate(test_conf, _recursive_=False,  _convert_="partial")
+                    test_module = hydra.utils.instantiate(
+                        test_conf, _recursive_=False, _convert_="partial"
+                    )
                     testmodules[test_case_name] = test_module
 
         # Init Lightning model
         log.info(f"Instantiating model <{config.model._target_}>")
-        model: LightningModule = hydra.utils.instantiate(config.model, _recursive_=False,  _convert_="partial")
+        model: LightningModule = hydra.utils.instantiate(
+            config.model, _recursive_=False, _convert_="partial"
+        )
 
         # Init Lightning callbacks
         callbacks: List[Callback] = []
@@ -129,7 +135,9 @@ def train(config: DictConfig) -> Optional[float]:
         df.to_csv("results.csv")
 
         # Print path to best checkpoint
-        log.info(f"Best checkpoint path:\n{trainer.checkpoint_callback.best_model_path}")
+        log.info(
+            f"Best checkpoint path:\n{trainer.checkpoint_callback.best_model_path}"
+        )
 
         # Return metric score for hyperparameter optimization
         optimized_metric = config.get("optimized_metric")

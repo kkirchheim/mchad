@@ -1,12 +1,9 @@
 import logging
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn import init
-import numpy as np
-
-
-import osr.utils
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +37,9 @@ class IILoss(nn.Module):
         self.n_embedding = n_embedding
 
         # create buffer for centers. those buffers will be updated during training, and are fixed during evaluation
-        running_centers = torch.empty(size=(self.n_classes, self.n_embedding), requires_grad=False).float()
+        running_centers = torch.empty(
+            size=(self.n_classes, self.n_embedding), requires_grad=False
+        ).float()
         num_batches_tracked = torch.empty(size=(1,), requires_grad=False).float()
 
         self.register_buffer("running_centers", running_centers)
@@ -57,20 +56,32 @@ class IILoss(nn.Module):
         init.zeros_(self.num_batches_tracked)
 
     def calculate_centers(self, embeddings, target):
-        mu = torch.full(size=(self.n_classes, self.n_embedding), fill_value=float('NaN'), device=embeddings.device)
+        mu = torch.full(
+            size=(self.n_classes, self.n_embedding),
+            fill_value=float("NaN"),
+            device=embeddings.device,
+        )
 
         for clazz in target.unique(sorted=False):
-            mu[clazz] = embeddings[target == clazz].mean(dim=0)  # all instances of this class
+            mu[clazz] = embeddings[target == clazz].mean(
+                dim=0
+            )  # all instances of this class
 
         return mu
 
     def calculate_spreads(self, mu, embeddings, targets):
-        class_spreads = torch.zeros((self.n_classes,), device=embeddings.device)  # scalar values
+        class_spreads = torch.zeros(
+            (self.n_classes,), device=embeddings.device
+        )  # scalar values
 
         # calculate sum of (squared) distances of all instances to the class center
         for clazz in targets.unique(sorted=False):
-            class_embeddings = embeddings[targets == clazz]  # all instances of this class
-            class_spreads[clazz] = torch.norm(class_embeddings - mu[clazz], p=2).pow(2).sum()
+            class_embeddings = embeddings[
+                targets == clazz
+            ]  # all instances of this class
+            class_spreads[clazz] = (
+                torch.norm(class_embeddings - mu[clazz], p=2).pow(2).sum()
+            )
 
         return class_spreads
 
@@ -106,7 +117,10 @@ class IILoss(nn.Module):
             mu = self.calculate_centers(embeddings, target)
 
             # update running mean centers
-            cma = mu[batch_classes] + self.running_centers[batch_classes] * self.num_batches_tracked
+            cma = (
+                mu[batch_classes]
+                + self.running_centers[batch_classes] * self.num_batches_tracked
+            )
             self.running_centers[batch_classes] = cma / (self.num_batches_tracked + 1)
             self.num_batches_tracked += 1
         else:
@@ -114,22 +128,24 @@ class IILoss(nn.Module):
             mu = self.running_centers
 
         # calculate sum of class spreads and divide by the number of instances
-        intra_spread = self.calculate_spreads(mu, embeddings, target).sum() / n_instances
+        intra_spread = (
+            self.calculate_spreads(mu, embeddings, target).sum() / n_instances
+        )
 
         # calculate distance between all (present) class centers
         dists = self.get_center_distances(mu[batch_classes])
 
         # the minimum distance between all class centers is the inter separation
-        inter_separation = - torch.min(dists)
+        inter_separation = -torch.min(dists)
 
         # intra_spread should be minimized, inter_separation maximized
         # we substract the margin from the inter seperation, so the overall loss will always be > 0.
         # this does not influence on the results of the loss, because constant offsets have no impact on the gradient.
-        return intra_spread,  inter_separation
+        return intra_spread, inter_separation
 
 
 def pairwise_distances(x, y=None):
-    '''
+    """
     Input: x is a Nxd matrix
            y is an optional Mxd matirx
     Output: dist is a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
@@ -138,7 +154,7 @@ def pairwise_distances(x, y=None):
     See https://discuss.pytorch.org/t/efficient-distance-matrix-computation/9065/3
 
     i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
-    '''
+    """
     x_norm = (x ** 2).sum(1).view(-1, 1)
     if y is not None:
         y_t = torch.transpose(y, 0, 1)

@@ -1,8 +1,10 @@
+import logging
 from typing import Optional
+
+import hydra
 from torch.utils.data import ConcatDataset, random_split
 from torchvision.transforms import transforms
-import hydra
-import logging
+
 from .base import MyBaseDataModule
 
 log = logging.getLogger(__name__)
@@ -77,7 +79,7 @@ class SingleOODDataModule(MyBaseDataModule):
         dataset = hydra.utils.instantiate(self.dataset_ood)
 
         # TODO:
-        n1 = int(0.9*len(dataset))
+        n1 = int(0.9 * len(dataset))
         n2 = len(dataset) - n1
         self.data_train, self.data_val = random_split(dataset, [n1, n2])
 

@@ -1,4 +1,5 @@
 import logging
+
 import numpy as np
 import torch
 
@@ -24,6 +25,7 @@ def calc_openness(n_train, n_test, n_target):
 #######################################
 # Helpers for labels
 #######################################
+
 
 def is_known(labels):
     """
@@ -56,7 +58,7 @@ def contains_known_and_unknown(labels) -> bool:
 
 def contains_known(labels) -> bool:
     """
-     :return: true if the labels contains any known labels
+    :return: true if the labels contains any known labels
     """
     return is_known(labels).any()
 
@@ -72,7 +74,10 @@ def contains_unknown(labels) -> bool:
 # Distance functions etc.
 #######################################
 
-def estimate_class_centers(embedding: torch.Tensor, target: torch.Tensor, num_centers: int = None) -> torch.Tensor:
+
+def estimate_class_centers(
+    embedding: torch.Tensor, target: torch.Tensor, num_centers: int = None
+) -> torch.Tensor:
     """
     Estimates class centers from the given embeddings and labels, using mean as estimator.
 
@@ -101,14 +106,14 @@ def estimate_class_centers(embedding: torch.Tensor, target: torch.Tensor, num_ce
 #     """
 #     return torch.cdist(centers, embeddings)
 #     #
-    # n_instances = embeddings.shape[0]
-    # n_centers = centers.shape[0]
-    # distances = torch.empty((n_instances, n_centers)).to(embeddings.device)
-    #
-    # return torch.cdist(centers, embeddings)
-    # for clazz in torch.arange(n_centers):
-    #     distances[:, clazz] = torch.norm(embeddings - centers[clazz], dim=1, p=2)
-    # return distances
+# n_instances = embeddings.shape[0]
+# n_centers = centers.shape[0]
+# distances = torch.empty((n_instances, n_centers)).to(embeddings.device)
+#
+# return torch.cdist(centers, embeddings)
+# for clazz in torch.arange(n_centers):
+#     distances[:, clazz] = torch.norm(embeddings - centers[clazz], dim=1, p=2)
+# return distances
 
 
 def optimize_temperature(logits: torch.Tensor, y, init=1, steps=1000, device="cpu"):
@@ -123,7 +128,9 @@ def optimize_temperature(logits: torch.Tensor, y, init=1, steps=1000, device="cp
         raise ValueError(f"Do not optimize temperature on unknown labels")
 
     nll = torch.nn.NLLLoss().to(device)
-    temperature = torch.nn.Parameter(torch.ones(size=(1,)), requires_grad=True).to(device)
+    temperature = torch.nn.Parameter(torch.ones(size=(1,)), requires_grad=True).to(
+        device
+    )
     torch.fill_(temperature, init)
     logits = logits.clone().to(device)
     y = y.clone().to(device)
@@ -136,10 +143,11 @@ def optimize_temperature(logits: torch.Tensor, y, init=1, steps=1000, device="cp
             log_probs = torch.nn.functional.log_softmax(scaled_logits)
             loss = nll(log_probs, y)
             loss.backward()
-            log.info(f"Step {i} Temperature {temperature.item()} NLL {loss.item()} Grad: {temperature.grad.item()}")
+            log.info(
+                f"Step {i} Temperature {temperature.item()} NLL {loss.item()} Grad: {temperature.grad.item()}"
+            )
             optimizer.step()
 
     best = temperature.detach().item()
     log.info(f"Finished Optimizing Temperature")
     return best
-

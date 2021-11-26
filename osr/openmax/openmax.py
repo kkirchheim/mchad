@@ -1,5 +1,7 @@
 import logging
+
 import numpy as np
+
 log = logging.getLogger(__name__)
 
 try:
@@ -70,13 +72,15 @@ class OpenMax(object):
             # calculate distances of all elements
             dists = self._get_dists_to_center(clazz, x[idxs])
 
-            tailtofit = sorted(dists)[-self.tailsize:]
+            tailtofit = sorted(dists)[-self.tailsize :]
 
             model = libmr.MR(alpha=self.alpha)
             model.fit_high(tailtofit, len(tailtofit))
 
             if not model.is_valid:
-                log.error(f"Fitting was invalid for class {clazz}: {len(tailtofit)} instances)")
+                log.error(
+                    f"Fitting was invalid for class {clazz}: {len(tailtofit)} instances)"
+                )
 
             self.distributions[clazz] = model
 
@@ -106,21 +110,24 @@ class OpenMax(object):
                 log.debug(f"Calculating distances for class {clazz}")
                 distances[:, clazz] = self._get_dists_to_center(clazz, x)
             except KeyError:
-                distances[:, clazz] = np.full((distances.shape[0],), 1e12)  # TODO: set to high value
+                distances[:, clazz] = np.full(
+                    (distances.shape[0],), 1e12
+                )  # TODO: set to high value
 
         # buffer for results
         revised_activation = np.zeros((x.shape[0], x.shape[1] + 1))
 
         # get indexes of top predictions, in ascending order
-        top_predictions = np.argsort(x, axis=1)[:, -self.alpha::][:, ::-1]
-        top_predictions = top_predictions[:, :self.alpha]
+        top_predictions = np.argsort(x, axis=1)[:, -self.alpha : :][:, ::-1]
+        top_predictions = top_predictions[:, : self.alpha]
 
         # alpha weights should be the same for each prediction
-        alpha_weights = [((self.alpha + 1) - i) / float(self.alpha) for i in range(1, self.alpha + 1)]
+        alpha_weights = [
+            ((self.alpha + 1) - i) / float(self.alpha) for i in range(1, self.alpha + 1)
+        ]
 
         # loop through all predictions (a-1)/a for elements in [1, alpha]
         for j, (activation, top_prediction) in enumerate(zip(x, top_predictions)):
-
 
             # calculate ranked alpha
             # ranked_alpha will be zero for all but the top predictions
@@ -145,7 +152,9 @@ class OpenMax(object):
                     # print(f"Error: class not found: {pred_class}")
                     pass
 
-            wscores = 1 - ws * ranked_alpha  # wscores will be 1 except for the top predictions
+            wscores = (
+                1 - ws * ranked_alpha
+            )  # wscores will be 1 except for the top predictions
 
             # now that we have calculated the weights, calc the revised activation vector
             revised_activation[j, 1:] = activation * wscores

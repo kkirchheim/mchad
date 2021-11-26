@@ -1,12 +1,12 @@
 import logging
 from typing import Any, List
 
+import hydra
 import torch
 from pytorch_lightning import LightningModule
-import hydra
 
-from osr.utils import is_known
 from osr.nn.loss import CACLoss
+from osr.utils import is_known
 from src.utils.metrics import log_classification_metrics
 from src.utils.mine import collect_outputs, save_embeddings
 
@@ -19,14 +19,14 @@ class CAC(LightningModule):
     """
 
     def __init__(
-            self,
-            backbone: dict = None,
-            optimizer: dict = None,
-            scheduler: dict = None,
-            n_classes=10,
-            weight_anchor=1.0,
-            magnitude=1,
-            **kwargs
+        self,
+        backbone: dict = None,
+        optimizer: dict = None,
+        scheduler: dict = None,
+        n_classes=10,
+        weight_anchor=1.0,
+        magnitude=1,
+        **kwargs,
     ):
         super().__init__()
 
@@ -36,7 +36,9 @@ class CAC(LightningModule):
 
         self.model = hydra.utils.instantiate(backbone)
 
-        self.cac_loss = CACLoss(n_classes=n_classes, magnitude=magnitude, weight_anchor=weight_anchor)
+        self.cac_loss = CACLoss(
+            n_classes=n_classes, magnitude=magnitude, weight_anchor=weight_anchor
+        )
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
@@ -76,8 +78,15 @@ class CAC(LightningModule):
         self.log(name="Loss/tuplet_loss/train", value=tuplet_loss, on_step=True)
 
         # NOTE: we treat the negative distance as logits
-        return {"loss": loss, "preds": preds, "targets": y, "logits": -dists, "dists": dists,
-                "embedding": embedding.cpu(), "points": x.cpu()}
+        return {
+            "loss": loss,
+            "preds": preds,
+            "targets": y,
+            "logits": -dists,
+            "dists": dists,
+            "embedding": embedding.cpu(),
+            "points": x.cpu(),
+        }
 
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
@@ -100,8 +109,15 @@ class CAC(LightningModule):
 
         x, y = batch
         # NOTE: we treat the negative distance as logits
-        return {"loss": loss, "preds": preds, "targets": y, "logits": -dists, "dists": dists,
-                "embedding": embedding.cpu(), "points": x.cpu()}
+        return {
+            "loss": loss,
+            "preds": preds,
+            "targets": y,
+            "logits": -dists,
+            "dists": dists,
+            "embedding": embedding.cpu(),
+            "points": x.cpu(),
+        }
 
     def validation_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
@@ -122,8 +138,14 @@ class CAC(LightningModule):
 
         x, y = batch
         # NOTE: we treat the negative distance as logits
-        return {"loss": loss, "preds": preds, "targets": y, "dists": dists,
-                "embedding": embedding.cpu(), "points": x.cpu()}
+        return {
+            "loss": loss,
+            "preds": preds,
+            "targets": y,
+            "dists": dists,
+            "embedding": embedding.cpu(),
+            "points": x.cpu(),
+        }
 
     def test_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
@@ -134,11 +156,12 @@ class CAC(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "test", targets, preds)
-        save_embeddings(self, dists, embedding, images, targets, tag=f"test-{self._test_epoch}")
+        save_embeddings(
+            self, dists, embedding, images, targets, tag=f"test-{self._test_epoch}"
+        )
         self._test_epoch += 1
 
     def configure_optimizers(self):
         opti = hydra.utils.instantiate(self.optimizer, params=self.parameters())
         sched = hydra.utils.instantiate(self.scheduler, optimizer=opti)
         return [opti], [sched]
-

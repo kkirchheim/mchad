@@ -1,10 +1,10 @@
+import logging
 from typing import Optional
+
+import numpy as np
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import transforms
-import logging
-import numpy as np
-import PIL
 
 from osr.ossim import TargetMapping
 
@@ -29,9 +29,7 @@ class ToRBG(object):
 
 
 class MyBaseDataModule(LightningDataModule):
-    """
-
-    """
+    """ """
 
     def __init__(
         self,
@@ -44,7 +42,7 @@ class MyBaseDataModule(LightningDataModule):
         ood_classes_test: int = 0,
         height: int = 32,
         width: int = 32,
-        normalize: dict = None
+        normalize: dict = None,
     ):
         super().__init__()
         self.batch_size = batch_size
@@ -59,18 +57,20 @@ class MyBaseDataModule(LightningDataModule):
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, padding=4),
             transforms.ToTensor(),
-            transforms.Resize(size=(height, width))
+            transforms.Resize(size=(height, width)),
         ]
 
         test_trans = [
             ToRBG(),
             transforms.ToTensor(),
-            transforms.Resize(size=(height, width))
+            transforms.Resize(size=(height, width)),
         ]
 
         if normalize:
             log.info(f"Adding normalization")
-            train_trans.append(transforms.Normalize(normalize["mean"], normalize["std"]))
+            train_trans.append(
+                transforms.Normalize(normalize["mean"], normalize["std"])
+            )
             test_trans.append(transforms.Normalize(normalize["mean"], normalize["std"]))
 
         self.train_trans = transforms.Compose(train_trans)
@@ -83,13 +83,15 @@ class MyBaseDataModule(LightningDataModule):
             # select several classes as unknown.
             n_leave_out = ood_classes_val + ood_classes_test
             labels = np.random.permutation(range(self.num_classes))
-            train_in = labels[0:self.num_classes - n_leave_out]
-            val_out = labels[self.num_classes - n_leave_out: self.num_classes - ood_classes_test]
-            test_out = labels[self.num_classes - ood_classes_test:]
+            train_in = labels[0 : self.num_classes - n_leave_out]
+            val_out = labels[
+                self.num_classes - n_leave_out : self.num_classes - ood_classes_test
+            ]
+            test_out = labels[self.num_classes - ood_classes_test :]
             self.target_transform = TargetMapping(
                 train_in_classes=train_in,
                 train_out_classes=val_out,
-                test_out_classes=test_out
+                test_out_classes=test_out,
             )
 
         self.data_train: Optional[Dataset] = None
@@ -100,7 +102,7 @@ class MyBaseDataModule(LightningDataModule):
         """Load data. Set variables: self.data_train, self.data_val, self.data_test."""
 
         # create a generator used to determine the training split
-        self.split_generator = None # torch.Generator()
+        self.split_generator = None  # torch.Generator()
         if self.data_split_seed:
             log.info(f"Initializing data split seed with {self.data_split_seed}")
             # self.split_generator.manual_seed(self.data_split_seed)
@@ -108,7 +110,7 @@ class MyBaseDataModule(LightningDataModule):
             log.info(f"Not initializing data split seed")
 
         # create a generator used to determine the ordering of the data
-        self.order_generator = None #  torch.Generator()
+        self.order_generator = None  #  torch.Generator()
         if self.data_order_seed:
             log.info(f"Initializing data ordering seed with {self.data_order_seed}")
             # self.order_generator.manual_seed(self.data_order_seed)
@@ -125,7 +127,7 @@ class MyBaseDataModule(LightningDataModule):
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
             shuffle=True,
-            generator=self.order_generator
+            generator=self.order_generator,
         )
 
     def val_dataloader(self):
@@ -137,7 +139,7 @@ class MyBaseDataModule(LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
-            shuffle=False
+            shuffle=False,
         )
 
     def test_dataloader(self):
@@ -149,6 +151,5 @@ class MyBaseDataModule(LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
-            shuffle=False
+            shuffle=False,
         )
-
