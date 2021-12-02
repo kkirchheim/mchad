@@ -5,18 +5,18 @@ import logging
 
 import numpy as np
 import pytorch_lightning as pl
-import pytorch_lightning.metrics.functional as metrics
 import torch
 import torch.nn.functional as F
+import torchmetrics.functional as metrics
 from pytorch_lightning.utilities import rank_zero_only
 
 from osr.utils import (
-    is_known,
     contains_known,
-    contains_unknown,
     contains_known_and_unknown,
-    is_unknown_unknown,
+    contains_unknown,
+    is_known,
     is_known_unknown,
+    is_unknown_unknown,
 )
 
 log = logging.getLogger(__name__)
@@ -50,9 +50,7 @@ def log_error_detection_metrics(
     It is unrelated to OOD/OSR, as it does not consider samples from unknown classes.
     """
     if not contains_known(y):
-        log.warning(
-            "Passed data does not contain known samples. Can not calculate error Metrics."
-        )
+        log.warning("Passed data does not contain known samples. Can not calculate error Metrics.")
 
         _log(model, np.nan, "Error", stage, "AUROC", method)
         _log(model, np.nan, "Error", stage, "AUPR-IN", method)
@@ -85,12 +83,8 @@ def log_error_detection_metrics(
         _log(model, auroc, "Error", stage, "AUROC", method, prog_bar=prog_bar)
         _log(model, aupr_in, "Error", stage, "AUPR-IN", method, prog_bar=prog_bar)
         _log(model, aupr_out, "Error", stage, "AUPR-OUT", method, prog_bar=prog_bar)
-        _log(
-            model, fpt_at_95tpr, "Error", stage, "FPR@95TPR", method, prog_bar=prog_bar
-        )
-        _log(
-            model, acc_at_95_tpr, "Error", stage, "ACC@95TPR", method, prog_bar=prog_bar
-        )
+        _log(model, fpt_at_95tpr, "Error", stage, "FPR@95TPR", method, prog_bar=prog_bar)
+        _log(model, acc_at_95_tpr, "Error", stage, "ACC@95TPR", method, prog_bar=prog_bar)
         _log(
             model,
             score[known & ~(y == y_hat)].mean(),
@@ -112,7 +106,7 @@ def log_error_detection_metrics(
 
     except Exception as e:
         log.exception(e)
-        log.error(f"Exception while calculating error detection metrics")
+        log.error("Exception while calculating error detection metrics")
 
 
 @rank_zero_only
@@ -198,10 +192,10 @@ def log_uncertainty_metrics(model, score, stage, y, y_hat, method=None, prog_bar
                     prog_bar=prog_bar,
                 )
             else:
-                log.warning(f"No known and correct points")
+                log.warning("No known and correct points")
         except Exception as e:
             log.exception(e)
-            log.error(f"Exception while calculating uncertainty detection metrics")
+            log.error("Exception while calculating uncertainty detection metrics")
 
     if contains_known(y):
         _log(
@@ -262,9 +256,7 @@ def _log(model, value, task, stage, metric, method=None, **kwargs):
 
 
 @rank_zero_only
-def log_osr_metrics(
-    model: pl.LightningModule, score, stage, y, method=None, prog_bar=False
-):
+def log_osr_metrics(model: pl.LightningModule, score, stage, y, method=None, prog_bar=False):
     """
     Log uncertainty metrics, AUROC and AUPR
 
@@ -314,9 +306,7 @@ def log_osr_metrics(
 
                 _log(model, auroc, "OSR", stage, "AUROC", method, prog_bar=prog_bar)
                 _log(model, aupr_in, "OSR", stage, "AUPR-IN", method, prog_bar=prog_bar)
-                _log(
-                    model, aupr_out, "OSR", stage, "AUPR-OUT", method, prog_bar=prog_bar
-                )
+                _log(model, aupr_out, "OSR", stage, "AUPR-OUT", method, prog_bar=prog_bar)
                 _log(
                     model,
                     fpt_at_95tpr,
@@ -359,13 +349,9 @@ def log_osr_metrics(
 
                 _log(model, auroc, "OSR", stage, "AUROC", method, prog_bar=prog_bar)
                 _log(model, aupr_in, "OSR", stage, "AUPR-IN", method, prog_bar=prog_bar)
-                _log(
-                    model, aupr_out, "OSR", stage, "AUPR-OUT", method, prog_bar=prog_bar
-                )
+                _log(model, aupr_out, "OSR", stage, "AUPR-OUT", method, prog_bar=prog_bar)
         except Exception as e:
-            log.error(
-                f"Exception while updating metrics for method {method} in stage {stage}"
-            )
+            log.error(f"Exception while updating metrics for method {method} in stage {stage}")
             log.exception(e)
 
     if contains_known(y):
