@@ -47,15 +47,15 @@ model:
     drop_rate: 0.3
 
 callbacks:
-  model_checkpoint:
-    _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    monitor: "Accuracy/val" # name of the logged metric which determines when model is improving
-    save_top_k: 1 # save k best models (determined by above metric)
-    save_last: True # additionaly always save model from last epoch
-    mode: "max" # can be "max" or "min"
-    verbose: False
-    dirpath: "checkpoints/"
-    filename: "{epoch:02d}"
+#  model_checkpoint:
+#    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+#    monitor: "Accuracy/val" # name of the logged metric which determines when model is improving
+#    save_top_k: 1 # save k best models (determined by above metric)
+#    save_last: True # additionaly always save model from last epoch
+#    mode: "max" # can be "max" or "min"
+#    verbose: False
+#    dirpath: "checkpoints/"
+#    filename: "{epoch:02d}"
   lr_monitor:
     _target_: pytorch_lightning.callbacks.LearningRateMonitor
 

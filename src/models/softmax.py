@@ -110,9 +110,12 @@ class SoftMax(LightningModule):
         save_embeddings(
             self, embedding=embedding, images=images, targets=targets, tag="train"
         )
+        try:
+            log.info(f"ACC Metric: {self.train_acc.compute()}")
+            log.info(f"AUROC Metric: {self.train_auroc.compute()}")
+        except ValueError as e:
+            pass
 
-        log.info(f"ACC Metric: {self.train_acc.compute()}")
-        log.info(f"AUROC Metric: {self.train_auroc.compute()}")
         self.train_acc.reset()
         self.test_auroc.reset()
 
@@ -151,8 +154,11 @@ class SoftMax(LightningModule):
             self, embedding=embedding, images=images, targets=targets, tag="val"
         )
 
-        log.info(f"ACC Metric: {self.val_acc.compute()}")
-        log.info(f"AUROC Metric: {self.val_auroc.compute()}")
+        try:
+            log.info(f"ACC Metric: {self.val_acc.compute()}")
+            log.info(f"AUROC Metric: {self.val_auroc.compute()}")
+        except ValueError as e:
+            log.error(f"{e}")
         self.val_acc.reset()
         self.val_auroc.reset()
 

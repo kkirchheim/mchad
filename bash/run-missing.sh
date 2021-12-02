@@ -5,11 +5,9 @@ log_dir="logs/multiruns/complete/missing/$(date +"%D-%T")/${now:%Y-%m-%d_%H-%M-%
 
 options="$@"
 
-#for ds in $datasets
-#do
-#  python run.py -m experiment="${ds}-mchad" seed="range(1,13,1)" trainer.gpus=1 hydra.sweep.dir="${log_dir}/${ds}-mchad/" ${options}
-#  python run.py -m experiment="${ds}-mchad-o" seed="range(1,13,1)" trainer.gpus=1 hydra.sweep.dir="${log_dir}/${ds}-mchad-o/" ${options}
-#  python run.py -m experiment="${ds}-center" seed="range(1,13,1)" trainer.gpus=1 hydra.sweep.dir="${log_dir}/${ds}-center/" ${options}
-#done
+python run.py -m experiment="cifar10-mchad-o" seed="range(1,7,1)" trainer.gpus=1 hydra.sweep.dir="${log_dir}/${ds}/mchad-o/" ${options}
 
-python run.py -m experiment="cifar100-softmax" seed="range(1,13,1)" trainer.gpus=1 hydra.sweep.dir="${log_dir}/${now:%Y-%m-%d_%H-%M-%S}/" ${options}
+for ds in $datasets
+do
+  python run.py -m experiment="${ds}-softmax" seed="range(1,7,1)" trainer.gpus=1 hydra.sweep.dir="${log_dir}/${ds}/softmax/" ${options}
+done
