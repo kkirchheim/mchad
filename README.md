@@ -37,7 +37,7 @@ Experiments are defined in `config/experiments`.
 To run MCHAD on a GPU, run:
 
 ```
-python run.py experiment=cifar10-mchad-o
+python run.py experiment=cifar10-mchad
 ```
 
 Each experiment will create a `results.csv` file that contains metrics for all datasets, as

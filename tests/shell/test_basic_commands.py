@@ -29,11 +29,11 @@ def test_default_gpu():
     run_command(command)
 
 
-@pytest.mark.slow
-def test_experiments():
-    """Train 1 epoch with all experiment configs."""
-    command = ["run.py", "-m", "experiment=glob(*)", "++trainer.max_epochs=1"]
-    run_command(command)
+# @pytest.mark.slow
+# def test_experiments():
+#     """Train 1 epoch with all experiment configs."""
+#     command = ["run.py", "-m", "experiment=glob(*)", "++trainer.max_epochs=1"]
+#     run_command(command)
 
 
 def test_limit_batches():
