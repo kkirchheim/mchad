@@ -8,7 +8,7 @@ from pytorch_lightning import LightningModule
 
 from osr.utils import is_known
 from src.utils.metrics import log_classification_metrics
-from src.utils.mine import save_embeddings, collect_outputs
+from src.utils.mine import collect_outputs, save_embeddings
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +25,6 @@ class SoftMax(LightningModule):
         backbone: dict = None,
         optimizer: dict = None,
         scheduler: dict = None,
-        pretrained=None,
         n_classes=10,
         **kwargs,
     ):
@@ -69,7 +68,7 @@ class SoftMax(LightningModule):
 
         preds = torch.argmax(logits, dim=1)
 
-        return loss, preds, logits, y
+        return loss, preds, logits
 
     def training_step(self, batch: Any, batch_idx: int, **kwargs):
         if type(batch) is list and type(batch[0]) is list:
@@ -77,8 +76,7 @@ class SoftMax(LightningModule):
             # we will get one batch from each loader
             batch = torch.cat([b[0] for b in batch]), torch.cat([b[1] for b in batch])
 
-        loss, preds, logits, y = self.step(batch)
-        embedding = logits
+        loss, preds, logits = self.step(batch)
 
         x, y = batch
 
@@ -95,7 +93,7 @@ class SoftMax(LightningModule):
             "preds": preds,
             "targets": y,
             "logits": logits,
-            "embedding": embedding.cpu(),
+            "embedding": logits.cpu(),
             "points": x.cpu(),
         }
 
@@ -107,9 +105,7 @@ class SoftMax(LightningModule):
         images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, logits)
-        save_embeddings(
-            self, embedding=embedding, images=images, targets=targets, tag="train"
-        )
+        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="train")
         try:
             log.info(f"ACC Metric: {self.train_acc.compute()}")
             log.info(f"AUROC Metric: {self.train_auroc.compute()}")
@@ -120,8 +116,7 @@ class SoftMax(LightningModule):
         self.test_auroc.reset()
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        loss, preds, logits, y = self.step(batch)
-        embedding = logits
+        loss, preds, logits = self.step(batch)
 
         self.log(name="Loss/loss_nll/val", value=loss)
         x, y = batch
@@ -137,7 +132,7 @@ class SoftMax(LightningModule):
             "preds": preds,
             "targets": y,
             "logits": logits,
-            "embedding": embedding.cpu(),
+            "embedding": logits.cpu(),
             "points": x.cpu(),
         }
 
@@ -150,9 +145,7 @@ class SoftMax(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "val", targets, preds, logits)
-        save_embeddings(
-            self, embedding=embedding, images=images, targets=targets, tag="val"
-        )
+        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
         try:
             log.info(f"ACC Metric: {self.val_acc.compute()}")
@@ -163,9 +156,7 @@ class SoftMax(LightningModule):
         self.val_auroc.reset()
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        loss, preds, logits, y = self.step(batch)
-        embedding = logits
-
+        loss, preds, logits = self.step(batch)
         x, y = batch
 
         if is_known(y).any():
@@ -177,9 +168,9 @@ class SoftMax(LightningModule):
         return {
             "loss": loss,
             "preds": preds,
-            "targets": x,
+            "targets": y,
             "logits": logits,
-            "embedding": embedding.cpu(),
+            "embedding": logits.cpu(),
             "points": x.cpu(),
         }
 

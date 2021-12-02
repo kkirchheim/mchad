@@ -5,7 +5,7 @@ log_dir="logs/multiruns/complete/missing/$(date +"%D-%T")/${now:%Y-%m-%d_%H-%M-%
 
 options="$@"
 
-python run.py -m experiment="cifar10-mchad-o" seed="range(1,7,1)" trainer.gpus=1 hydra.sweep.dir="${log_dir}/${ds}/mchad-o/" ${options}
+# python run.py -m experiment="cifar10-mchad-o" seed="range(1,7,1)" trainer.gpus=1 hydra.sweep.dir="${log_dir}/${ds}/mchad-o/" ${options}
 
 for ds in $datasets
 do
