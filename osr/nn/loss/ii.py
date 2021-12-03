@@ -23,11 +23,6 @@ class IILoss(nn.Module):
             entire dataset after training.
         * The device of the given embedding will be used as device for all calculations.
 
-
-    .. warning::
-        * Hassen et al. report that batch-norm bounds the output in a hypercube and thus limits the spread of distances,
-          however, we could not reproduce this behavior in our experiments.
-
     """
 
     def __init__(self, n_classes, n_embedding, **kwargs):
@@ -63,25 +58,17 @@ class IILoss(nn.Module):
         )
 
         for clazz in target.unique(sorted=False):
-            mu[clazz] = embeddings[target == clazz].mean(
-                dim=0
-            )  # all instances of this class
+            mu[clazz] = embeddings[target == clazz].mean(dim=0)  # all instances of this class
 
         return mu
 
     def calculate_spreads(self, mu, embeddings, targets):
-        class_spreads = torch.zeros(
-            (self.n_classes,), device=embeddings.device
-        )  # scalar values
+        class_spreads = torch.zeros((self.n_classes,), device=embeddings.device)  # scalar values
 
         # calculate sum of (squared) distances of all instances to the class center
         for clazz in targets.unique(sorted=False):
-            class_embeddings = embeddings[
-                targets == clazz
-            ]  # all instances of this class
-            class_spreads[clazz] = (
-                torch.norm(class_embeddings - mu[clazz], p=2).pow(2).sum()
-            )
+            class_embeddings = embeddings[targets == clazz]  # all instances of this class
+            class_spreads[clazz] = torch.norm(class_embeddings - mu[clazz], p=2).pow(2).sum()
 
         return class_spreads
 
@@ -118,8 +105,7 @@ class IILoss(nn.Module):
 
             # update running mean centers
             cma = (
-                mu[batch_classes]
-                + self.running_centers[batch_classes] * self.num_batches_tracked
+                mu[batch_classes] + self.running_centers[batch_classes] * self.num_batches_tracked
             )
             self.running_centers[batch_classes] = cma / (self.num_batches_tracked + 1)
             self.num_batches_tracked += 1
@@ -128,9 +114,7 @@ class IILoss(nn.Module):
             mu = self.running_centers
 
         # calculate sum of class spreads and divide by the number of instances
-        intra_spread = (
-            self.calculate_spreads(mu, embeddings, target).sum() / n_instances
-        )
+        intra_spread = self.calculate_spreads(mu, embeddings, target).sum() / n_instances
 
         # calculate distance between all (present) class centers
         dists = self.get_center_distances(mu[batch_classes])
@@ -139,21 +123,18 @@ class IILoss(nn.Module):
         inter_separation = -torch.min(dists)
 
         # intra_spread should be minimized, inter_separation maximized
-        # we substract the margin from the inter seperation, so the overall loss will always be > 0.
-        # this does not influence on the results of the loss, because constant offsets have no impact on the gradient.
         return intra_spread, inter_separation
 
 
 def pairwise_distances(x, y=None):
     """
-    Input: x is a Nxd matrix
-           y is an optional Mxd matirx
-    Output: dist is a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
+    :param x: Nxd matrix
+    :param y:  optional Mxd matrix
+    :return: a NxM matrix where dist[i,j] is the square norm between x[i,:] and y[j,:]
             if y is not given then use 'y=x'.
 
-    See https://discuss.pytorch.org/t/efficient-distance-matrix-computation/9065/3
+    :see Web: https://discuss.pytorch.org/t/efficient-distance-matrix-computation/9065/3
 
-    i.e. dist[i,j] = ||x[i,:]-y[j,:]||^2
     """
     x_norm = (x ** 2).sum(1).view(-1, 1)
     if y is not None:

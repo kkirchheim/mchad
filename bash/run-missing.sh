@@ -9,5 +9,5 @@ options="$@"
 
 for ds in $datasets
 do
-  python run.py -m experiment="${ds}-softmax" seed="range(1,7,1)" trainer.gpus=1 hydra.sweep.dir="${log_dir}/${ds}/softmax/" ${options}
+  python run.py -m experiment="${ds}-cac" seed="range(1,7,1)" trainer.gpus=1 hydra.sweep.dir="${log_dir}/${ds}/cac/" ${options}
 done

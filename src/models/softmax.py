@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 class SoftMax(LightningModule):
     """
-    Model based on the normal softmax classifier.
+    Model based on the baseline softmax classifier.
 
     Implements softmax thresholding as baseline for OOD.
     """
@@ -41,10 +41,6 @@ class SoftMax(LightningModule):
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
-
-        # save configurations
-        self.optimizer = optimizer
-        self.scheduler = scheduler
 
         self.train_acc = torchmetrics.Accuracy(num_classes=n_classes)
         self.train_auroc = torchmetrics.AUROC(num_classes=2)
@@ -138,14 +134,14 @@ class SoftMax(LightningModule):
 
     def validation_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
-        preds = collect_outputs(outputs, "preds")
+        predictions = collect_outputs(outputs, "preds")
         logits = collect_outputs(outputs, "logits")
-        embedding = collect_outputs(outputs, "embedding")
-        images = collect_outputs(outputs, "points")
+        z = collect_outputs(outputs, "embedding")
+        x = collect_outputs(outputs, "points")
 
         # log val metrics
-        log_classification_metrics(self, "val", targets, preds, logits)
-        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
+        log_classification_metrics(self, "val", targets, predictions, logits)
+        save_embeddings(self, embedding=z, images=x, targets=targets, tag="val")
 
         try:
             log.info(f"ACC Metric: {self.val_acc.compute()}")
@@ -176,24 +172,20 @@ class SoftMax(LightningModule):
 
     def test_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
-        preds = collect_outputs(outputs, "preds")
+        predictions = collect_outputs(outputs, "preds")
         logits = collect_outputs(outputs, "logits")
-        embedding = collect_outputs(outputs, "embedding")
-        images = collect_outputs(outputs, "points")
+        z = collect_outputs(outputs, "embedding")
+        x = collect_outputs(outputs, "points")
 
         # log val metrics
-        log_classification_metrics(self, "test", targets, preds, logits)
+        log_classification_metrics(self, "test", targets, predictions, logits)
         save_embeddings(
-            self,
-            embedding=embedding,
-            images=images,
-            targets=targets,
-            tag=f"test-{self._test_epoch}",
+            self, embedding=z, images=x, targets=targets, tag=f"test-{self._test_epoch}"
         )
 
         self._test_epoch += 1
 
     def configure_optimizers(self):
-        opti = hydra.utils.instantiate(self.optimizer, params=self.parameters())
-        sched = hydra.utils.instantiate(self.scheduler, optimizer=opti)
+        opti = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters())
+        sched = hydra.utils.instantiate(self.hparams.scheduler, optimizer=opti)
         return [opti], [sched]

@@ -8,7 +8,7 @@ from pytorch_lightning import LightningModule
 from osr.nn.loss import IILoss
 from osr.utils import is_known
 from src.utils.metrics import log_classification_metrics
-from src.utils.mine import save_embeddings, collect_outputs
+from src.utils.mine import collect_outputs, save_embeddings
 
 log = logging.getLogger(__name__)
 
@@ -37,15 +37,10 @@ class IIModel(LightningModule):
         self.save_hyperparameters()
 
         self.model = hydra.utils.instantiate(backbone)
-
         self.ii_loss = IILoss(n_classes=n_classes, n_embedding=n_embedding)
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
-
-        # save configurations
-        self.optimizer = optimizer
-        self.scheduler = scheduler
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -53,21 +48,21 @@ class IIModel(LightningModule):
     def step(self, batch: Any):
         x, y = batch
         known = is_known(y)
-        embedding = self.forward(x)
+        z = self.forward(x)
 
-        dists = self.ii_loss.calculate_distances(embedding)
+        dists = self.ii_loss.calculate_distances(z)
 
         if known.any():
-            intra_spread, inter_separation = self.ii_loss(embedding[known], y[known])
+            intra_spread, inter_separation = self.ii_loss(z[known], y[known])
         else:
             intra_spread, inter_separation = 0, 0
 
         preds = torch.argmin(dists, dim=1)
 
-        return intra_spread, inter_separation, preds, dists, y, embedding
+        return intra_spread, inter_separation, preds, dists, z
 
     def training_step(self, batch: Any, batch_idx: int, **kwargs):
-        intra_spread, inter_separation, preds, dists, y, embedding = self.step(batch)
+        intra_spread, inter_separation, preds, dists, z = self.step(batch)
 
         x, y = batch
 
@@ -75,35 +70,30 @@ class IIModel(LightningModule):
         loss = intra_spread + 100 * inter_separation
 
         self.log(name="Loss/intra_spread/train", value=intra_spread, on_step=True)
-        self.log(
-            name="Loss/inter_separation/train", value=inter_separation, on_step=True
-        )
+        self.log(name="Loss/inter_separation/train", value=inter_separation, on_step=True)
 
-        # NOTE: we treat the negative distance as logits
         return {
             "loss": loss,
             "preds": preds,
             "targets": y,
-            "logits": -dists,
             "dists": dists,
-            "embedding": embedding.cpu(),
+            "embedding": z.cpu(),
             "points": x.cpu(),
         }
 
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
         targets = collect_outputs(outputs, "targets")
-        preds = collect_outputs(outputs, "preds")
-        logits = collect_outputs(outputs, "logits")
+        predictions = collect_outputs(outputs, "preds")
         dists = collect_outputs(outputs, "dists")
         embedding = collect_outputs(outputs, "embedding")
         images = collect_outputs(outputs, "points")
 
-        log_classification_metrics(self, "train", targets, preds, logits)
+        log_classification_metrics(self, "train", targets, predictions, -dists)
         save_embeddings(self, dists, embedding, images, targets, tag="train")
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        intra_spread, inter_separation, preds, dists, y, embedding = self.step(batch)
+        intra_spread, inter_separation, preds, dists, embedding = self.step(batch)
 
         loss = intra_spread + inter_separation
 
@@ -111,12 +101,10 @@ class IIModel(LightningModule):
         self.log(name="Loss/inter_separation/val", value=inter_separation)
 
         x, y = batch
-        # NOTE: we treat the negative distance as logits
         return {
             "loss": loss,
             "preds": preds,
             "targets": y,
-            "logits": -dists,
             "dists": dists,
             "embedding": embedding.cpu(),
             "points": x.cpu(),
@@ -124,28 +112,25 @@ class IIModel(LightningModule):
 
     def validation_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
-        preds = collect_outputs(outputs, "preds")
-        logits = collect_outputs(outputs, "logits")
+        predictions = collect_outputs(outputs, "preds")
         dists = collect_outputs(outputs, "dists")
         embedding = collect_outputs(outputs, "embedding")
         images = collect_outputs(outputs, "points")
 
         # log val metrics
-        log_classification_metrics(self, "val", targets, preds, logits)
+        log_classification_metrics(self, "val", targets, predictions, -dists)
         save_embeddings(self, dists, embedding, images, targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        intra_spread, inter_separation, preds, dists, y, embedding = self.step(batch)
+        intra_spread, inter_separation, preds, dists, embedding = self.step(batch)
 
         loss = intra_spread + inter_separation
 
         x, y = batch
-        # NOTE: we treat the negative distance as logits
         return {
             "loss": loss,
             "preds": preds,
             "targets": y,
-            "logits": -dists,
             "dists": dists,
             "embedding": embedding.cpu(),
             "points": x.cpu(),
@@ -153,20 +138,17 @@ class IIModel(LightningModule):
 
     def test_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
-        preds = collect_outputs(outputs, "preds")
-        logits = collect_outputs(outputs, "logits")
+        predictions = collect_outputs(outputs, "preds")
         dists = collect_outputs(outputs, "dists")
-        embedding = collect_outputs(outputs, "embedding")
-        images = collect_outputs(outputs, "points")
+        z = collect_outputs(outputs, "embedding")
+        x = collect_outputs(outputs, "points")
 
         # log val metrics
-        log_classification_metrics(self, "test", targets, preds, logits)
-        save_embeddings(
-            self, dists, embedding, images, targets, tag=f"test-{self._test_epoch}"
-        )
+        log_classification_metrics(self, "test", targets, predictions, -dists)
+        save_embeddings(self, dists, z, x, targets, tag=f"test-{self._test_epoch}")
         self._test_epoch += 1
 
     def configure_optimizers(self):
-        opti = hydra.utils.instantiate(self.optimizer, params=self.parameters())
-        sched = hydra.utils.instantiate(self.scheduler, optimizer=opti)
+        opti = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters())
+        sched = hydra.utils.instantiate(self.hparams.scheduler, optimizer=opti)
         return [opti], [sched]

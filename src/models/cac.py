@@ -43,48 +43,41 @@ class CAC(LightningModule):
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
 
-        # save configurations
-        self.optimizer = optimizer
-        self.scheduler = scheduler
-
     def forward(self, x: torch.Tensor):
         return self.model(x)
 
     def step(self, batch: Any):
         x, y = batch
         known = is_known(y)
-        embedding = self.forward(x)
+        z = self.forward(x)
 
         if known.any():
-            anchor_loss, tuplet_loss = self.cac_loss(embedding[known], y[known])
+            anchor_loss, tuplet_loss = self.cac_loss(z[known], y[known])
         else:
             anchor_loss, tuplet_loss = 0, 0
 
         with torch.no_grad():
-            distmat = self.cac_loss.calculate_distances(embedding)
+            distmat = self.cac_loss.calculate_distances(z)
             preds = torch.argmin(distmat, dim=1)
 
-        return anchor_loss, tuplet_loss, preds, distmat, y, embedding
+        return anchor_loss, tuplet_loss, preds, distmat, z
 
     def training_step(self, batch: Any, batch_idx: int, **kwargs):
-        anchor_loss, tuplet_loss, preds, dists, y, embedding = self.step(batch)
+        anchor_loss, tuplet_loss, preds, dists, z = self.step(batch)
 
         x, y = batch
 
-        # TODO: add weighting
         loss = anchor_loss + tuplet_loss
 
         self.log(name="Loss/anchor_loss/train", value=anchor_loss, on_step=True)
         self.log(name="Loss/tuplet_loss/train", value=tuplet_loss, on_step=True)
 
-        # NOTE: we treat the negative distance as logits
         return {
             "loss": loss,
             "preds": preds,
             "targets": y,
-            "logits": -dists,
             "dists": dists,
-            "embedding": embedding.cpu(),
+            "embedding": z.cpu(),
             "points": x.cpu(),
         }
 
@@ -100,7 +93,7 @@ class CAC(LightningModule):
         save_embeddings(self, dists, embedding, images, targets, tag="train")
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        anchor_loss, tuplet_loss, preds, dists, y, embedding = self.step(batch)
+        anchor_loss, tuplet_loss, preds, dists, z = self.step(batch)
 
         loss = anchor_loss + tuplet_loss
 
@@ -108,14 +101,13 @@ class CAC(LightningModule):
         self.log(name="Loss/tuplet_loss/val", value=tuplet_loss)
 
         x, y = batch
-        # NOTE: we treat the negative distance as logits
+
         return {
             "loss": loss,
             "preds": preds,
             "targets": y,
-            "logits": -dists,
             "dists": dists,
-            "embedding": embedding.cpu(),
+            "embedding": z.cpu(),
             "points": x.cpu(),
         }
 
@@ -132,36 +124,33 @@ class CAC(LightningModule):
         save_embeddings(self, dists, embedding, images, targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        anchor_loss, tuplet_loss, preds, dists, y, embedding = self.step(batch)
+        anchor_loss, tuplet_loss, preds, dists, z = self.step(batch)
 
         loss = anchor_loss + tuplet_loss
 
         x, y = batch
-        # NOTE: we treat the negative distance as logits
         return {
             "loss": loss,
             "preds": preds,
             "targets": y,
             "dists": dists,
-            "embedding": embedding.cpu(),
+            "embedding": z.cpu(),
             "points": x.cpu(),
         }
 
     def test_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
-        preds = collect_outputs(outputs, "preds")
+        predictions = collect_outputs(outputs, "preds")
         dists = collect_outputs(outputs, "dists")
-        embedding = collect_outputs(outputs, "embedding")
-        images = collect_outputs(outputs, "points")
+        z = collect_outputs(outputs, "embedding")
+        x = collect_outputs(outputs, "points")
 
         # log val metrics
-        log_classification_metrics(self, "test", targets, preds)
-        save_embeddings(
-            self, dists, embedding, images, targets, tag=f"test-{self._test_epoch}"
-        )
+        log_classification_metrics(self, "test", targets, predictions)
+        save_embeddings(self, dists, z, x, targets, tag=f"test-{self._test_epoch}")
         self._test_epoch += 1
 
     def configure_optimizers(self):
-        opti = hydra.utils.instantiate(self.optimizer, params=self.parameters())
-        sched = hydra.utils.instantiate(self.scheduler, optimizer=opti)
+        opti = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters())
+        sched = hydra.utils.instantiate(self.hparams.scheduler, optimizer=opti)
         return [opti], [sched]

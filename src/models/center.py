@@ -9,7 +9,7 @@ from torch import nn
 from osr.nn.loss import CenterLoss
 from osr.utils import is_known
 from src.utils.metrics import log_classification_metrics
-from src.utils.mine import save_embeddings, collect_outputs
+from src.utils.mine import collect_outputs, save_embeddings
 
 log = logging.getLogger(__name__)
 
@@ -49,10 +49,6 @@ class Center(LightningModule):
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
-
-        # save configurations
-        self.optimizer = optimizer
-        self.scheduler = scheduler
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -103,9 +99,7 @@ class Center(LightningModule):
         images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, logits)
-        save_embeddings(
-            self, embedding=embedding, images=images, targets=targets, tag="val"
-        )
+        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)
@@ -136,9 +130,7 @@ class Center(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "val", targets, preds, logits)
-        save_embeddings(
-            self, embedding=embedding, images=images, targets=targets, tag="val"
-        )
+        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)
@@ -174,6 +166,6 @@ class Center(LightningModule):
         self._test_epoch += 1
 
     def configure_optimizers(self):
-        opti = hydra.utils.instantiate(self.optimizer, params=self.parameters())
-        sched = hydra.utils.instantiate(self.scheduler, optimizer=opti)
+        opti = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters())
+        sched = hydra.utils.instantiate(self.hparams.scheduler, optimizer=opti)
         return [opti], [sched]

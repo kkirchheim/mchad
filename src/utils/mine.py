@@ -10,7 +10,7 @@ import time
 import types
 from collections import defaultdict
 from os.path import join
-from typing import List, Any
+from typing import Any, List
 
 import numpy as np
 import pytorch_lightning as pl
@@ -21,7 +21,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers.base import LoggerCollection
 from torch.utils.data import Subset
 
-from osr.utils import is_known, is_unknown, contains_known, contains_unknown
+from osr.utils import contains_known, contains_unknown, is_known, is_unknown
 
 log = logging.getLogger(__name__)
 
@@ -70,14 +70,10 @@ def create_optimizer(config, parameter):
         if isinstance(parameter, (list, types.GeneratorType)):
             opti = torch.optim.Adam(parameter, lr=lr, weight_decay=weight_decay)
         else:
-            opti = torch.optim.Adam(
-                parameter.parameters(), lr=lr, weight_decay=weight_decay
-            )
+            opti = torch.optim.Adam(parameter.parameters(), lr=lr, weight_decay=weight_decay)
     elif name == "sgd":
         if isinstance(parameter, (list, types.GeneratorType)):
-            opti = torch.optim.SGD(
-                parameter, lr=lr, weight_decay=weight_decay, momentum=momentum
-            )
+            opti = torch.optim.SGD(parameter, lr=lr, weight_decay=weight_decay, momentum=momentum)
         else:
             opti = torch.optim.SGD(
                 parameter.parameters(),
@@ -267,26 +263,7 @@ def log_score_histogram(model, stage, score, y, y_hat, method=None):
                 )
 
         if contains_unknown(y) and not np.isnan(score).any():
-            writer.add_histogram(
-                tag=f"{prefix}/unknown", values=score[unknown], global_step=epoch
-            )
-
-
-def create_metadata(known, labels, distance=None, centers=None):
-    """
-    Create metadata for embedding logging
-    """
-    if distance is not None:
-        header = ["label", "known", "distance"]
-        data = [
-            [str(l.item()), str(k.item()), str(d.item())]
-            for k, l, d in zip(known, labels, distance)
-        ]
-    else:
-        header = ["label", "known"]
-        data = [[str(l.item()), str(k.item())] for k, l in zip(known, labels)]
-
-    return header, data
+            writer.add_histogram(tag=f"{prefix}/unknown", values=score[unknown], global_step=epoch)
 
 
 class ContextGuard:
@@ -387,27 +364,27 @@ def collect_outputs(outputs: List[Any], key) -> torch.Tensor:
         # i have no idea when which case hits ...
         if type(outputs[0]) is list:
             if type(outputs[0][0]) is dict:
-                l = []
+                tmp = []
                 for output in outputs:
-                    l.extend([o[key] for o in output])
+                    tmp.extend([o[key] for o in output])
             else:
-                l = []
+                tmp = []
                 for output in outputs:
-                    l.extend([o for o in output])
-            return torch.cat(l)
+                    tmp.extend([o for o in output])
+            return torch.cat(tmp)
         elif type(outputs[0]) is dict:
             return torch.cat([output[key] for output in outputs])
         else:
-            l = []
+            tmp = []
             for output in outputs:
-                l.extend([o for o in output])
-            return torch.cat(l)
+                tmp.extend([o for o in output])
+            return torch.cat(tmp)
     else:
         return torch.cat([output[key] for output in outputs])
 
 
 def save_embeddings(
-    pl_model,
+    pl_model: pl.LightningModule,
     dists=None,
     embedding=None,
     images=None,
@@ -416,9 +393,10 @@ def save_embeddings(
     tag="default",
     limit=5000,
 ):
-    # limit number of saved entries so tensorboard does not crash because of too many sprites
-    log.info(f"Saving embeddings")
 
+    log.info("Saving embeddings")
+
+    # limit number of saved entries so tensorboard does not crash because of too many sprites
     indexes = torch.randperm(len(embedding))[:limit]
     header, data = create_metadata(
         is_known(targets[indexes]),
@@ -435,3 +413,20 @@ def save_embeddings(
         label_img=None if images is None else images[indexes],
         tag=tag,
     )
+
+
+def create_metadata(known, labels, distance=None, centers=None):
+    """
+    Create metadata for embedding logging
+    """
+    if distance is not None:
+        header = ["label", "known", "distance"]
+        data = [
+            [str(l.item()), str(k.item()), str(d.item())]
+            for k, l, d in zip(known, labels, distance)
+        ]
+    else:
+        header = ["label", "known"]
+        data = [[str(l.item()), str(k.item())] for k, l in zip(known, labels)]
+
+    return header, data
