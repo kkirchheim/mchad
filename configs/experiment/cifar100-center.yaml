@@ -1,10 +1,7 @@
 # @package _global_
 
-# to execute this experiment run:
-# python run.py experiment=example_full.yaml
-
 defaults:
-  - override /trainer: null # override trainer to null so it's not loaded from main config defaults...
+  - override /trainer: null
   - override /model: null
   - override /datamodule: cifar100
   - override /callbacks: null
@@ -13,19 +10,22 @@ defaults:
 
 seed: 12345
 deterministic: True
+debug: True
+ignore_warnings: True
+epochs: 100
+n_embedding: 64 # same as mchad
 
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
-  min_epochs: 100
-  max_epochs: 100
+  min_epochs: ${epochs}
+  max_epochs: ${epochs}
   weights_summary: null
-
 
 model:
   _target_: src.models.Center
   n_classes: 100
-  n_embedding: 64 # same as mchad
+  n_embedding: ${n_embedding}
   weight_center: 0.5 # default, as given in the paper
   optimizer:
     _target_: torch.optim.Adam
@@ -33,7 +33,7 @@ model:
     weight_decay: 0.00005
   scheduler:
     _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-    T_0: 100
+    T_0: ${epochs}
   backbone:
     _target_: src.models.modules.wrn.WideResNet
     num_classes: 64
@@ -42,18 +42,8 @@ model:
     drop_rate: 0.3
 
 callbacks:
-#  model_checkpoint:
-#    _target_: pytorch_lightning.callbacks.ModelCheckpoint
-#    monitor: "Accuracy/val" # name of the logged metric which determines when model is improving
-#    save_top_k: 1 # save k best models (determined by above metric)
-#    save_last: True # additionaly always save model from last epoch
-#    mode: "max" # can be "max" or "min"
-#    verbose: False
-#    dirpath: "checkpoints/"
-#    filename: "{epoch:02d}"
   lr_monitor:
     _target_: pytorch_lightning.callbacks.LearningRateMonitor
-
   softmax:
     _target_: src.callbacks.softmax.SoftmaxThresholding
     use_in_val: True

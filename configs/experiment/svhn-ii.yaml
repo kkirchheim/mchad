@@ -10,42 +10,37 @@ defaults:
 
 seed: 12345
 deterministic: True
+debug: True
+ignore_warnings: True
+epochs: 20
+n_embedding: 16
 
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
-  min_epochs: 20
-  max_epochs: 20
+  min_epochs: ${epochs}
+  max_epochs: ${epochs}
   weights_summary: null
 
 model:
   _target_: src.models.IIModel
   n_classes: 10
-  n_embedding: 16
+  n_embedding: ${n_embedding}
   optimizer:
     _target_: torch.optim.Adam
     lr: 0.00001
-    weight_decay: 0.00000 # TODO:
+    weight_decay: 0.00005
   scheduler:
     _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-    T_0: 20
+    T_0: ${epochs}
   backbone:
     _target_: src.models.modules.wrn.WideResNet
-    num_classes: 16
+    num_classes: ${n_embedding}
     widen_factor: 2
     depth: 40
     drop_rate: 0.3
 
 callbacks:
-#  model_checkpoint:
-#    _target_: pytorch_lightning.callbacks.ModelCheckpoint
-#    monitor: "Accuracy/val" # name of the logged metric which determines when model is improving
-#    save_top_k: 1 # save k best models (determined by above metric)
-#    save_last: True # additionaly always save model from last epoch
-#    mode: "max" # can be "max" or "min"
-#    verbose: False
-#    dirpath: "checkpoints/"
-#    filename: "{epoch:02d}"
   lr_monitor:
     _target_: pytorch_lightning.callbacks.LearningRateMonitor
   distance:

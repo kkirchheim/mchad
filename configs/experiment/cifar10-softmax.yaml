@@ -1,26 +1,24 @@
 # @package _global_
 
-# to execute this experiment run:
-# python run.py experiment=example_full.yaml
-
 defaults:
-  - override /trainer: null # override trainer to null so it's not loaded from main config defaults...
+  - override /trainer: null
   - override /model: null
-  - override /datamodule: cifar10-oe
+  - override /datamodule: cifar10
   - override /callbacks: null
   - override /logger: default
   - override /testmodules: cifar10
 
 seed: 12345
 deterministic: True
+debug: True
+ignore_warnings: True
+epochs: 20
 
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
-  min_epochs: 20
-  max_epochs: 20
-  limit_train_batches: 784 # 392 batches x2
-  limit_val_batches: 80 # 392 batches x2
+  min_epochs: ${epochs}
+  max_epochs: ${epochs}
   weights_summary: null
 
 model:
@@ -32,7 +30,7 @@ model:
     weight_decay: 0.00005
   scheduler:
     _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-    T_0: 20
+    T_0: ${epochs}
   backbone:
     _target_: src.models.modules.wrn.WideResNet
     num_classes: 10
@@ -41,18 +39,8 @@ model:
     drop_rate: 0.3
 
 callbacks:
-#  model_checkpoint:
-#    _target_: pytorch_lightning.callbacks.ModelCheckpoint
-#    monitor: "Accuracy/val" # name of the logged metric which determines when model is improving
-#    save_top_k: 1 # save k best models (determined by above metric)
-#    save_last: True # additionaly always save model from last epoch
-#    mode: "max" # can be "max" or "min"
-#    verbose: False
-#    dirpath: "checkpoints/"
-#    filename: "{epoch:02d}"
   lr_monitor:
     _target_: pytorch_lightning.callbacks.LearningRateMonitor
-
   softmax:
     _target_: src.callbacks.softmax.SoftmaxThresholding
     use_in_val: True
@@ -62,12 +50,12 @@ callbacks:
     temperature: 1
     use_in_val: True
     use_in_test: True
-  mcd:
-    _target_: src.callbacks.mcd.MonteCarloDropout
-    num_classes: 10
-    rounds: 30
-    use_in_val: False
-    use_in_test: True
+#  mcd:
+#    _target_: src.callbacks.mcd.MonteCarloDropout
+#    num_classes: 10
+#    rounds: 30
+#    use_in_val: False
+#    use_in_test: True
 #  openmax:
 #    _target_: src.callbacks.openmax.OpenMax
 #    tailsize: 3
@@ -75,14 +63,14 @@ callbacks:
 #    euclid_weight: 0
 #    use_in_val: False
 #    use_in_test: True
-  odin:
-    _target_: src.callbacks.odin.ODIN
-    eps: 0.02
-    t: 1000
-    use_in_val: False
-    use_in_test: True
-  tscaling:
-    _target_: src.callbacks.tscaling.TemperatureScaling
-    temperature: 1000
-    use_in_val: True
-    use_in_test: True
+#  odin:
+#    _target_: src.callbacks.odin.ODIN
+#    eps: 0.02
+#    t: 1000
+#    use_in_val: False
+#    use_in_test: True
+#  tscaling:
+#    _target_: src.callbacks.tscaling.TemperatureScaling
+#    temperature: 1000
+#    use_in_val: True
+#    use_in_test: True

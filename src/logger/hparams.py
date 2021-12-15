@@ -10,12 +10,10 @@ log = logging.getLogger(__name__)
 
 class YamlLogger(plog.LightningLoggerBase):
     """
-    Logs hyperparameters to a yaml file
+    Logs hyper parameters to a yaml file
     """
 
-    def __init__(
-        self, filename="config.yaml", name="yaml", version=None, prefix="", save_dir="."
-    ):
+    def __init__(self, filename="config.yaml", name="yaml", version=None, prefix="", save_dir="."):
         super(YamlLogger, self).__init__()
         self.filename = filename
         self._version = version
@@ -27,15 +25,18 @@ class YamlLogger(plog.LightningLoggerBase):
         with open(self.filename, "w") as f:
             f.write(OmegaConf.to_yaml(params))
 
+    @property
     def experiment(self) -> Any:
         pass
 
     def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None):
         pass
 
+    @property
     def name(self) -> str:
         return self._name
 
+    @property
     def version(self) -> Union[int, str]:
         return self._version
 
