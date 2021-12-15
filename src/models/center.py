@@ -8,8 +8,8 @@ from torch import nn
 
 from osr.nn.loss import CenterLoss
 from osr.utils import is_known
+from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
-from src.utils.mine import collect_outputs, save_embeddings
 
 log = logging.getLogger(__name__)
 

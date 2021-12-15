@@ -16,10 +16,21 @@ from osr.utils import (
     contains_unknown,
     is_known,
     is_known_unknown,
+    is_unknown,
     is_unknown_unknown,
 )
 
 log = logging.getLogger(__name__)
+
+
+def _log(model, value, task, stage, metric, method=None, **kwargs):
+    """
+    Specifies our logging format
+    """
+    if method:
+        model.log(f"{method}/{task}/{metric}/{stage}", value, **kwargs)
+    else:
+        model.log(f"{task}/{metric}/{stage}", value, **kwargs)
 
 
 def fpr_at_tpr(pred, target, k=0.95):
@@ -222,7 +233,6 @@ def log_uncertainty_metrics(model, score, stage, y, y_hat, method=None, prog_bar
 
 @rank_zero_only
 def log_classification_metrics(model: pl.LightningModule, stage, y, y_hat, logits=None):
-    """ """
     if contains_known(y):
         known_idx = is_known(y)
         acc = metrics.accuracy(y_hat[known_idx], y[known_idx])
@@ -248,19 +258,14 @@ def log_classification_metrics(model: pl.LightningModule, stage, y, y_hat, logit
     return
 
 
-def _log(model, value, task, stage, metric, method=None, **kwargs):
-    if method:
-        model.log(f"{method}/{task}/{metric}/{stage}", value, **kwargs)
-    else:
-        model.log(f"{task}/{metric}/{stage}", value, **kwargs)
-
-
 @rank_zero_only
 def log_osr_metrics(model: pl.LightningModule, score, stage, y, method=None, prog_bar=False):
     """
-    Log uncertainty metrics, AUROC and AUPR
+    Log OSR metrics, AUROC and AUPR etc.
 
-    Uncertainty refers to the ability to discriminate images of known from images of unknown classes.
+    :param model: the model to log for
+    :param score: score for samples. should be a confidence, i.e. high values indicate
+        "normal" or "in-distribution" points.
     """
 
     if not contains_known_and_unknown(y):
@@ -273,17 +278,15 @@ def log_osr_metrics(model: pl.LightningModule, score, stage, y, method=None, pro
     else:
 
         known = is_known(y)
-        known_unknown = is_known_unknown(y)
-        unknown_unknown = is_unknown_unknown(y)
-
-        known_or_unknown_unknown = is_known(y) | is_unknown_unknown(y)
+        unknown = is_unknown(y)
 
         try:
-            if unknown_unknown.any():
+            if contains_known_and_unknown(y):
                 # see how good we are at distinguishing between known and unkown, but ignore
                 # known unknowns
-                scores = score[known_or_unknown_unknown]
-                labels = known[known_or_unknown_unknown].long()
+                scores = score
+                labels = known.long()
+
                 auroc = metrics.auroc(scores, labels)
 
                 # AUPR IN
@@ -326,32 +329,8 @@ def log_osr_metrics(model: pl.LightningModule, score, stage, y, method=None, pro
                     prog_bar=prog_bar,
                 )
 
-            if known_unknown.any():
-                log.info(f"Found known unknown: {y[known_unknown].unique()}")
-                # see how good we are at distinguishing between known known and known unknowns
-                # this will only be done for methods that train on known unknown data, or if we include
-                # samples of known unknowns in the validation set
-                scores = score[known | known_unknown]
-                labels = known[known | known_unknown].long()
-                auroc = metrics.auroc(scores, labels)
-
-                # AUPR IN
-                precision, recall, thresholds = metrics.precision_recall_curve(
-                    scores, labels, pos_label=1
-                )
-                aupr_in = metrics.auc(recall, precision)
-
-                # AUPR OUT
-                precision, recall, thresholds = metrics.precision_recall_curve(
-                    -score, 1 - labels, pos_label=1
-                )
-                aupr_out = metrics.auc(recall, precision)
-
-                _log(model, auroc, "OSR", stage, "AUROC", method, prog_bar=prog_bar)
-                _log(model, aupr_in, "OSR", stage, "AUPR-IN", method, prog_bar=prog_bar)
-                _log(model, aupr_out, "OSR", stage, "AUPR-OUT", method, prog_bar=prog_bar)
         except Exception as e:
-            log.error(f"Exception while updating metrics for method {method} in stage {stage}")
+            log.error(f"Exception while updating OSR metrics for method {method} in stage {stage}")
             log.exception(e)
 
     if contains_known(y):

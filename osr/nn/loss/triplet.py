@@ -15,6 +15,8 @@ class TripletLoss(torch.nn.Module):
 
     :see Implementation: https://github.com/NegatioN/OnlineMiningTripletLoss/blob/master/online_triplet_loss/losses.py
 
+    Original license it MIT.
+
     .. note::
         * We copied this implementation and wrapped in into a Pytorch module. Credits go to **github.com/NegatioN**.
         * We added running centers for online class center estimation.
@@ -48,9 +50,7 @@ class TripletLoss(torch.nn.Module):
 
     def calculate_distances(self, embeddings):
         # FIXME: distances will be invalid if squaring is disabled (?)
-        distances = osr.utils.torch_get_squared_distances(
-            self.running_centers, embeddings
-        )
+        distances = osr.utils.torch_get_squared_distances(self.running_centers, embeddings)
         return distances
 
     def forward(self, embedding, target):
@@ -70,9 +70,7 @@ class TripletLoss(torch.nn.Module):
                     mu[batch_classes]
                     + self.running_centers[batch_classes] * self.num_batches_tracked
                 )
-                self.running_centers[batch_classes] = cma / (
-                    self.num_batches_tracked + 1
-                )
+                self.running_centers[batch_classes] = cma / (self.num_batches_tracked + 1)
                 self.num_batches_tracked += 1
 
         if self.hard_mining:
@@ -91,9 +89,7 @@ class TripletLoss(torch.nn.Module):
         )
 
         for clazz in target.unique(sorted=False):
-            mu[clazz] = embeddings[target == clazz].mean(
-                dim=0
-            )  # all instances of this class
+            mu[clazz] = embeddings[target == clazz].mean(dim=0)  # all instances of this class
 
         return mu
 
@@ -228,9 +224,7 @@ def batch_hard_triplet_loss(labels, embeddings, margin, squared=True):
 
     # We add the maximum value in each row to the invalid negatives (label(a) == label(n))
     max_anchor_negative_dist, _ = pairwise_dist.max(1, keepdim=True)
-    anchor_negative_dist = pairwise_dist + max_anchor_negative_dist * (
-        1.0 - mask_anchor_negative
-    )
+    anchor_negative_dist = pairwise_dist + max_anchor_negative_dist * (1.0 - mask_anchor_negative)
 
     # shape (batch_size,)
     hardest_negative_dist, _ = anchor_negative_dist.min(1, keepdim=True)
@@ -282,9 +276,7 @@ def batch_all_triplet_loss(labels, embeddings, margin, squared=False):
     num_positive_triplets = valid_triplets.size(0)
     num_valid_triplets = mask.sum()
 
-    fraction_positive_triplets = num_positive_triplets / (
-        num_valid_triplets.float() + 1e-16
-    )
+    fraction_positive_triplets = num_positive_triplets / (num_valid_triplets.float() + 1e-16)
 
     # Get final mean triplet loss over the positive valid triplets
     triplet_loss = triplet_loss.sum() / (num_positive_triplets + 1e-16)

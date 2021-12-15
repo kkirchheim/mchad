@@ -1,168 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Common functions accessed by other modules
+Utils mainly used for logging putposes, for example to save embeddings, gradients, weights etc.
+
 """
-import json
 import logging
-import sys
 import time
-import types
 from collections import defaultdict
-from os.path import join
 from typing import Any, List
 
 import numpy as np
 import pytorch_lightning as pl
 import torch
-import torch.optim.lr_scheduler as scheduler
-from omegaconf import OmegaConf
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers.base import LoggerCollection
-from torch.utils.data import Subset
+from torch.utils.tensorboard import SummaryWriter
 
 from osr.utils import contains_known, contains_unknown, is_known, is_unknown
 
 log = logging.getLogger(__name__)
-
-
-def configure_logging(path=None, stderr=False):
-    fmt = "[%(levelname)s] (%(processName)s)  %(asctime)s - %(name)s: %(message)s"
-
-    if path and path.strip() != "-":
-        logging.basicConfig(filename=path, level=logging.DEBUG, format=fmt)
-
-    root = logging.getLogger()
-
-    if path == "-":
-        ch = logging.StreamHandler(stream=sys.stdout)
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(logging.Formatter(fmt=fmt))
-        root.addHandler(ch)
-
-    if stderr:
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(logging.Formatter(fmt=fmt))
-        root.addHandler(ch)
-
-    root.setLevel(logging.DEBUG)
-    root.info("Logging configured")
-
-
-####################################################
-# Creating object from configuration
-###################################################
-
-
-def create_optimizer(config, parameter):
-    """
-    @param config:
-    @param parameter: a model or a list of parameters to optimize
-    """
-    lr = config["learning_rate"]
-    weight_decay = config["weight_decay"]
-    name = config["name"]
-    momentum = config["momentum"]
-
-    if name == "adam":
-        # FIXME: adam does not support momentum as parameter
-        if isinstance(parameter, (list, types.GeneratorType)):
-            opti = torch.optim.Adam(parameter, lr=lr, weight_decay=weight_decay)
-        else:
-            opti = torch.optim.Adam(parameter.parameters(), lr=lr, weight_decay=weight_decay)
-    elif name == "sgd":
-        if isinstance(parameter, (list, types.GeneratorType)):
-            opti = torch.optim.SGD(parameter, lr=lr, weight_decay=weight_decay, momentum=momentum)
-        else:
-            opti = torch.optim.SGD(
-                parameter.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-                momentum=momentum,
-            )
-    else:
-        raise ValueError(f"Unknown Optimizer: {name}")
-
-    return opti
-
-
-def create_scheduler(config, optimizer):
-    if config["name"] == "MultiStepLR":
-        return scheduler.MultiStepLR(
-            optimizer, milestones=config["milestones"], gamma=config["gamma"]
-        )
-    elif config["name"] == "ExponentialLR":
-        return scheduler.ExponentialLR(optimizer, gamma=config["gamma"])
-    elif config["name"] == "CosineAnnealingLR":
-        return scheduler.CosineAnnealingLR(optimizer, T_max=config["T_max"])
-    else:
-        return ValueError
-
-
-#######################################################
-# Helpers for loading and saving
-#######################################################
-
-
-def save_pipeline(directory, pipeline, train):
-    if train:
-        path = join(directory, "pipeline-train.pt")
-    else:
-        path = join(directory, "pipeline-test.pt")
-    torch.save(pipeline, path)
-
-
-def load_pipeline(directory, train):
-    if train:
-        path = join(directory, "pipeline-train.pt")
-    else:
-        path = join(directory, "pipeline-test.pt")
-
-    return torch.load(path)
-
-
-def save_config(config, directory):
-    OmegaConf.save(config, join(directory, "config.yaml"))
-
-
-def load_config(directory):
-    return OmegaConf.load(join(directory, "config.yaml"))
-
-
-def load_split(directory):
-    return torch.load(join(directory, "split.pt"))
-
-
-def save_split(split, directory):
-    torch.save(split, join(directory, "split.pt"))
-
-
-def save_target_mapping(directory, mapping):
-    torch.save(mapping, join(directory, "class-mapping.pt"))
-
-    # additionally, save as json for convenience
-    path = join(directory, "class-mapping.json")
-    m = {int(k): int(v) for k, v in mapping.items()}
-    s = json.dumps(m, sort_keys=True, indent=4)
-    # log.debug(f"Target Mapping: {s}")
-    with open(path, "w") as f:
-        f.write(s)
-
-
-def load_target_mapping(directory):
-    return torch.load(join(directory, "class-mapping.pt"))
-
-
-def get_dataset(loader):
-    """
-    Unwrap dataset
-    """
-    dataset = loader.dataset
-    if isinstance(dataset, Subset):
-        return get_dataset(dataset)
-    else:
-        return dataset
 
 
 ###################################################
@@ -170,7 +26,7 @@ def get_dataset(loader):
 ###################################################
 
 
-def find_tensorboard(obj):
+def get_tensorboard(obj) -> SummaryWriter:
     """
     Helper function to get the tensorboard for a module from a list of its loggers
     """
@@ -192,7 +48,7 @@ def find_tensorboard(obj):
             return logger.experiment
 
 
-def get_tb_logger(loggers) -> TensorBoardLogger:
+def _get_tb(loggers) -> TensorBoardLogger:
     """
     Gets the tensorboard logger from model.logger
     """
@@ -209,7 +65,7 @@ def log_weight_hists(model: pl.LightningModule):
         return
 
     for name, param in model.named_parameters():
-        find_tensorboard(model.logger).add_histogram(
+        get_tensorboard(model.logger).add_histogram(
             tag=f"weights/{name}", values=param, global_step=model.global_step
         )
 
@@ -220,7 +76,7 @@ def log_grad_hists(model: pl.LightningModule):
 
     for name, param in model.named_parameters():
         if param.requires_grad and param.grad is not None:
-            find_tensorboard(model.logger).add_histogram(
+            get_tensorboard(model.logger).add_histogram(
                 tag=f"gradients/{name}",
                 values=param.grad,
                 global_step=model.global_step,
@@ -232,7 +88,7 @@ def log_score_histogram(model, stage, score, y, y_hat, method=None):
     Save histograms of confidence scores
     """
 
-    writer = find_tensorboard(model)
+    writer = get_tensorboard(model)
     epoch = model.current_epoch
 
     if writer:
@@ -352,12 +208,12 @@ class TensorBuffer:
         return self
 
 
-##################################################
-
-
 def collect_outputs(outputs: List[Any], key) -> torch.Tensor:
     """
-    Collect outputs for model with multiple dataloaders
+    Collect outputs for model with multiple data loaders, which will be a list of dicts.
+
+    :param outputs: outputs returned by pytorch lighting.
+    :param key: the key to collect all tensors for, e.g. "embeddings"
     """
     if type(outputs) is list:
         # multiple data loaders
@@ -389,23 +245,38 @@ def save_embeddings(
     embedding=None,
     images=None,
     targets=None,
-    centers=None,
     tag="default",
     limit=5000,
 ):
+    """
+    Helper for saving embeddings etc. to tensorboard
+
+    :param pl_model: pytorch lightning module
+    :param dists: distances of samples to some reference points, for example class centers. Only minimum will be logged.
+    :param embedding: representation of input points
+    :param images: corresponding input points. Can be none
+    :param targets: labels
+    :param tag: tag to log to tensorboard
+    :param limit: maximum number of instances to log. to many will result in the generated files being to large etc.
+    """
 
     log.info("Saving embeddings")
 
     # limit number of saved entries so tensorboard does not crash because of too many sprites
     indexes = torch.randperm(len(embedding))[:limit]
-    header, data = create_metadata(
-        is_known(targets[indexes]),
-        targets[indexes],
-        distance=None if dists is None else torch.min(dists[indexes], dim=1)[0],
-        centers=centers,
-    )
 
-    find_tensorboard(pl_model).add_embedding(
+    args = {
+        "known": is_known(targets)[indexes],
+        "labels": targets[indexes],
+    }
+
+    if dists is not None:
+        args.update({"distance": torch.min(dists[indexes], dim=1)[0]})
+        args.update({"predictions": torch.argmin(dists[indexes], dim=1)})
+
+    header, data = create_metadata(**args)
+
+    get_tensorboard(pl_model).add_embedding(
         embedding[indexes],
         metadata=data,
         global_step=pl_model.global_step,
@@ -415,18 +286,13 @@ def save_embeddings(
     )
 
 
-def create_metadata(known, labels, distance=None, centers=None):
+def create_metadata(**kwargs):
     """
-    Create metadata for embedding logging
+    Create metadata to save embeddings with tensorboard
+
+    :param kwargs: keys and an associated list of values
     """
-    if distance is not None:
-        header = ["label", "known", "distance"]
-        data = [
-            [str(l.item()), str(k.item()), str(d.item())]
-            for k, l, d in zip(known, labels, distance)
-        ]
-    else:
-        header = ["label", "known"]
-        data = [[str(l.item()), str(k.item())] for k, l in zip(known, labels)]
+    header = [k for k, _ in kwargs.items()]
+    data = [[str(c.item()) for c in col] for col in zip(*kwargs.values())]
 
     return header, data

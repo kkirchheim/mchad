@@ -4,8 +4,8 @@ import pytorch_lightning as pl
 import torch.nn.functional as F
 
 from osr.nn.loss import cac
+from src.utils.logger import TensorBuffer, log_score_histogram
 from src.utils.metrics import log_error_detection_metrics, log_osr_metrics, log_uncertainty_metrics
-from src.utils.mine import TensorBuffer, log_score_histogram
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +29,8 @@ class CACScorer(pl.callbacks.Callback):
         dists = self.buffer[CACScorer.BUFFER_KEY]
         y_hat = F.softmin(dists, dim=1).max(dim=1)[1]
 
-        conf = cac.rejection_score(distance=dists).min(dim=1).values
+        # since the cac calculates a rejection score, we use the negative value for the "confidence".
+        conf = -cac.rejection_score(distance=dists).min(dim=1).values
         log_osr_metrics(pl_module, conf, stage, y, method=CACScorer.NAME)
         log_uncertainty_metrics(pl_module, conf, stage, y, conf, method=CACScorer.NAME)
         log_error_detection_metrics(pl_module, conf, stage, y, y_hat, method=CACScorer.NAME)
