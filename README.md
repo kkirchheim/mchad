@@ -51,6 +51,20 @@ python run.py experiment=cifar10-mchad trainer.gpus=1
 ```
 to train on the GPU.
 
+
+
+<details>
+<summary><b>Live training metrics, embeddings etc. can be visualized with Tensorboard.</b></summary>
+
+```shell
+tensorboard --logdir logs/
+```
+
+![mchad](img/tb.png)
+
+</details>
+
+
 ## Replication
 
 ### Experiments
@@ -61,12 +75,12 @@ bash/run-rexperiments.sh "dataset_dir=/path/to/your/dataset/directory/"
 ```
 
 All datasets will be downloaded automatically to the given `dataset_dir`,
-except for the 80 Million TinyImages Dataset, which has to be downloaded and placed there manually.
+except for the 80 Million TinyImages Dataset ([mirror](http://www.archive.org/download/80-million-tiny-images-2-of-2/tiny_images.bin)), which has to be downloaded and placed there manually.
 If you do not want to use the TinyImages Dataset, you can get a cleaned version from
 [Hendrycks et al.](https://github.com/hendrycks/outlier-exposure). However, the results might be
 different.
 
-Results will be written to `csv` files which have to be aggregated.
+Results for each run will be written to `csv` files which have to be aggregated.
 You can find our results in the `notebooks/eval.ipynb`.
 Per default, we run experiments in parallel on 6 GPUs.
 You might have to adjust `config/hydra/launcher/ray.yaml` to configure parallelization.
