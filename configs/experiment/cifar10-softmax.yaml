@@ -12,7 +12,7 @@ seed: 12345
 deterministic: True
 debug: True
 ignore_warnings: True
-epochs: 20
+epochs: 10
 
 trainer:
   _target_: pytorch_lightning.Trainer
@@ -29,8 +29,11 @@ model:
     lr: 0.001
     weight_decay: 0.00005
   scheduler:
-    _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-    T_0: ${epochs}
+    scheduler:
+      _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+      T_0: 3920 # 392 * epochs ${epochs}
+    interval: step
+    frequency: 1
   backbone:
     _target_: src.models.modules.wrn.WideResNet
     num_classes: 10

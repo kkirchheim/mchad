@@ -4,9 +4,9 @@ from typing import Any, List
 import hydra
 import torch
 import torchmetrics
+from osr.utils import is_known
 from pytorch_lightning import LightningModule
 
-from osr.utils import is_known
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
@@ -187,5 +187,10 @@ class SoftMax(LightningModule):
 
     def configure_optimizers(self):
         opti = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters())
-        sched = hydra.utils.instantiate(self.hparams.scheduler, optimizer=opti)
+        sched = {
+            "scheduler": hydra.utils.instantiate(self.hparams.scheduler.scheduler, optimizer=opti),
+            "interval": self.hparams.scheduler.interval,
+            "frequency": self.hparams.scheduler.frequency,
+        }
+
         return [opti], [sched]

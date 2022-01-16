@@ -63,7 +63,7 @@ def train(config: DictConfig) -> Optional[float]:
         # Init Lightning model
         log.info(f"Instantiating model <{config.model._target_}>")
         model: LightningModule = hydra.utils.instantiate(
-            config.model, _recursive_=False, _convert_="partial"
+            config.model, _recursive_=False, _convert_="none"
         )
 
         # Init Lightning callbacks
@@ -103,7 +103,7 @@ def train(config: DictConfig) -> Optional[float]:
         log.info("Starting training!")
         trainer.fit(model=model, datamodule=datamodule)
 
-        log.info(f"Fitting model finished.")
+        log.info("Fitting model finished.")
 
         # save datamodule
         # do this after the first call to setup, but before the second one in test
@@ -135,9 +135,7 @@ def train(config: DictConfig) -> Optional[float]:
         df.to_csv("results.csv")
 
         # Print path to best checkpoint
-        log.info(
-            f"Best checkpoint path:\n{trainer.checkpoint_callback.best_model_path}"
-        )
+        log.info(f"Best checkpoint path:\n{trainer.checkpoint_callback.best_model_path}")
 
         # Return metric score for hyperparameter optimization
         optimized_metric = config.get("optimized_metric")
@@ -145,4 +143,4 @@ def train(config: DictConfig) -> Optional[float]:
             return trainer.callback_metrics[optimized_metric]
     except Exception as e:
         log.exception(e)
-        log.error(f"Training terminated by exception")
+        log.error("Training terminated by exception")
