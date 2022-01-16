@@ -1,5 +1,5 @@
 # cifar 10 with outlier exposure
-_target_: src.datamodules.cifar10_datamodule.CIFAR10DataModule
+_target_: src.datamodules.CIFAR10DataModule
 normalize:
   # https://github.com/wetliu/energy_ood/blob/master/CIFAR/train.py
   mean: [0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666]

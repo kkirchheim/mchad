@@ -14,7 +14,6 @@ seed: 12345
 deterministic: False
 
 epochs: 20
-n_embedding: 10 # fixed for this architecture
 
 trainer:
   _target_: pytorch_lightning.Trainer
@@ -37,7 +36,7 @@ model:
     T_0: ${epochs}
   backbone:
     _target_: src.models.modules.wrn.WideResNet
-    num_classes: ${n_embedding}
+    num_classes: 10
     widen_factor: 2
     depth: 40
     drop_rate: 0.3

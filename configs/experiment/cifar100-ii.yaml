@@ -25,7 +25,7 @@ trainer:
 model:
   _target_: src.models.IIModel
   n_classes: 100
-  n_embedding: 64
+  n_embedding: ${n_embedding}
   optimizer:
     _target_: torch.optim.Adam
     lr: 0.00001

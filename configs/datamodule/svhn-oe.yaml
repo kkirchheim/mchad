@@ -1,4 +1,4 @@
-_target_: src.datamodules.multi_datamodule.MultiDatamodule
+_target_: src.datamodules.MultiDatamodule
 module1:
   _target_: src.datamodules.SVHNDataModule
   normalize:
@@ -12,12 +12,14 @@ module1:
   data_order_seed: null
   data_split_seed: null
 module2:
-  _target_: src.datamodules.ood_datamodule.SingleOODDataModule
+  _target_: src.datamodules.SingleOODDataModule
   dataset:
-    _target_: src.datamodules.datasets.TinyImages
-    datafile: ${dataset_dir}/tiny-images/tiny_images.bin
-    cifar_index_file: ${dataset_dir}/tiny-images/80mn_cifar_idxs.txt
-    exclude_cifar: True
+    _target_: src.datamodules.datasets.TinyImages300k
+    datafile: ${dataset_dir}/tiny-images/300K_random_images.npy
+  #    _target_: src.datamodules.datasets.TinyImages
+  #    datafile: ${dataset_dir}/tiny-images/tiny_images.bin
+  #    cifar_index_file: ${dataset_dir}/tiny-images/80mn_cifar_idxs.txt
+  #    exclude_cifar: True
   normalize:
     # https://albumentations.ai/docs/autoalbument/examples/svhn/
     mean: [0.4376821, 0.4437697, 0.47280442]

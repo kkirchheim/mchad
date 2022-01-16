@@ -99,10 +99,12 @@ class MCHAD(LightningModule):
         self.log(name="Loss/loss_nll/train", value=loss_nll, on_step=True)
         self.log(name="Loss/loss_out/train", value=loss_out, on_step=True)
 
-        known_dists = dists[is_known(y)].min(dim=1)[0].mean().item()
-        unknown_dists = dists[~is_known(y)].min(dim=1)[0].mean().item()
-        self.log("Distance/known/train", value=known_dists, on_step=True)
-        self.log("Distance/unknown/train", value=unknown_dists, on_step=True)
+        if is_known(y).any():
+            known_dists = dists[is_known(y)].min(dim=1)[0].mean().item()
+            self.log("Distance/known/train", value=known_dists)
+        if is_unknown(y).any():
+            unknown_dists = dists[is_unknown(y)].min(dim=1)[0].mean().item()
+            self.log("Distance/unknown/train", value=unknown_dists)
 
         return {
             "loss": loss,
