@@ -28,7 +28,7 @@ model:
   _target_: src.models.MCHAD
   n_classes: 100
   n_embedding: ${n_embedding}
-  radius: 1.0
+  margin: 1.0
   weight_center: 1.0
   weight_oe: 0.0005
   weight_ce: 1.5

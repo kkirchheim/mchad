@@ -3,10 +3,10 @@ from typing import Any, List
 
 import hydra
 import torch
-from osr.utils import is_known
 from pytorch_lightning import LightningModule
 
 from osr.nn.loss import IILoss
+from osr.utils import is_known
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
@@ -27,7 +27,7 @@ class IIModel(LightningModule):
         scheduler: dict = None,
         n_classes=10,
         n_embedding=10,
-        weight_sep=1.0,  # weight for separation term. default, as in the original paper
+        weight_sep=100.0,  # weight for separation term., not included in the original paper
         **kwargs,
     ):
         super().__init__()
@@ -38,12 +38,17 @@ class IIModel(LightningModule):
 
         self.model = hydra.utils.instantiate(backbone)
         self.ii_loss = IILoss(n_classes=n_classes, n_embedding=n_embedding)
-
+        self.weight_sep = weight_sep
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
+
+    def on_train_epoch_start(self) -> None:
+        # this implementation uses running average estimates for the centers.
+        # these should be reset regularly
+        self.ii_loss.reset_running_stats()
 
     def step(self, batch: Any):
         x, y = batch
@@ -66,8 +71,8 @@ class IIModel(LightningModule):
 
         x, y = batch
 
-        # NOTE: weighting is not in the original paper
-        loss = intra_spread + 100 * inter_separation
+        # NOTE: weighting is not in the original paper, but it collapses immediately without it
+        loss = intra_spread + self.weight_sep * inter_separation
 
         self.log(name="Loss/intra_spread/train", value=intra_spread, on_step=True)
         self.log(name="Loss/inter_separation/train", value=inter_separation, on_step=True)
@@ -95,7 +100,7 @@ class IIModel(LightningModule):
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         intra_spread, inter_separation, preds, dists, embedding = self.step(batch)
 
-        loss = intra_spread + inter_separation
+        loss = intra_spread + self.weight_sep * inter_separation
 
         self.log(name="Loss/intra_spread/val", value=intra_spread)
         self.log(name="Loss/inter_separation/val", value=inter_separation)
@@ -124,7 +129,7 @@ class IIModel(LightningModule):
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         intra_spread, inter_separation, preds, dists, embedding = self.step(batch)
 
-        loss = intra_spread + inter_separation
+        loss = intra_spread + self.weight_sep * inter_separation
 
         x, y = batch
         return {

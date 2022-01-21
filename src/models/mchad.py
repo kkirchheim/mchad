@@ -4,10 +4,10 @@ from typing import Any, List
 import hydra
 import numpy as np
 import torch
-from osr.utils import is_known, is_unknown
 from pytorch_lightning import LightningModule
 from torch import nn
 
+from osr.utils import is_known, is_unknown
 from src.utils.logger import collect_outputs, get_tensorboard, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
@@ -16,7 +16,8 @@ log = logging.getLogger(__name__)
 
 class MCHAD(LightningModule):
     """
-    Multi Class Hypersphere Anomaly Detection model
+    Multi Class Hypersphere Anomaly Detection model.
+    Uses a radius of 0 for the hyperspheres.
     """
 
     def __init__(
@@ -25,11 +26,11 @@ class MCHAD(LightningModule):
         optimizer: dict = None,
         scheduler: dict = None,
         weight_center=0.5,
-        weight_oe=0.1,
-        weight_ce=1.0,
+        weight_oe=0.0005,
+        weight_ce=1.5,
         n_classes=10,
         n_embedding=10,
-        radius=1.0,
+        margin=1.0,
         pretrained=None,
         **kwargs,
     ):
@@ -45,7 +46,7 @@ class MCHAD(LightningModule):
         self.soft_margin_loss = SoftMarginLoss(n_classes=n_classes, z_dim=n_embedding)
         self.nll_loss = nn.CrossEntropyLoss()
         # since we use a soft margin loss, the "radius" of the spheres is the margin
-        self.regu_loss = MCHADRegularizationLoss(margin=radius)
+        self.regu_loss = MCHADRegularizationLoss(margin=margin)
 
         self.weight_oe = weight_oe
         self.weight_center = weight_center

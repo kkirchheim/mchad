@@ -28,7 +28,7 @@ model:
   n_embedding: ${n_embedding}
   optimizer:
     _target_: torch.optim.Adam
-    lr: 0.00001
+    lr: 0.00003 # works much better with this learning rate
     weight_decay: 0.00005
   scheduler:
     scheduler:
