@@ -3,29 +3,35 @@
 defaults:
   - override /trainer: null
   - override /model: null
-  - override /datamodule: cifar10
+  - override /datamodule: cifar100-oe
   - override /callbacks: null
   - override /logger: default
-  - override /testmodules: cifar10
+  - override /testmodules: cifar100
 
 seed: 12345
 deterministic: True
-
+debug: True
+ignore_warnings: True
 epochs: 10
-n_embedding: 16 # same as mchad
+n_embedding: 64
 
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
   min_epochs: ${epochs}
   max_epochs: ${epochs}
+  limit_train_batches: 784 # 392 batches x2
+  limit_val_batches: 80 # 392 batches x2
   weights_summary: null
 
 model:
-  _target_: src.models.Center
-  n_classes: 10
+  _target_: src.models.GCenter
+  n_classes: 100
   n_embedding: ${n_embedding}
-  weight_center: 0.5 # default, as given in the paper
+  margin: 1.0
+  weight_center: 1.0
+  weight_oe: 0.0005
+  weight_ce: 1.5
   optimizer:
     _target_: torch.optim.Adam
     lr: 0.001
@@ -35,7 +41,7 @@ model:
       _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
       T_0: 3920 # 392 * epochs ${epochs}
     interval: step
-    frequency: 1
+    frequency: 2
   backbone:
     _target_: src.models.modules.wrn.WideResNet
     num_classes: ${n_embedding}

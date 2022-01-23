@@ -3,29 +3,34 @@
 defaults:
   - override /trainer: null
   - override /model: null
-  - override /datamodule: cifar10
+  - override /datamodule: svhn-oe
   - override /callbacks: null
   - override /logger: default
-  - override /testmodules: cifar10
+  - override /testmodules: svhn
 
 seed: 12345
-deterministic: True
-
+deterministic: False # TODO: not all operations are implemented as deterministic
+debug: True
+ignore_warnings: True
 epochs: 10
-n_embedding: 16 # same as mchad
 
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 0
   min_epochs: ${epochs}
   max_epochs: ${epochs}
+  limit_train_batches: 784 # 392 batches x2
+  limit_val_batches: 80 # 392 batches x2
   weights_summary: null
 
 model:
-  _target_: src.models.Center
+  _target_: src.models.GCAC
+  margin: 1.0
+  magnitude: 1.0
+  weight_center: 1.0
+  weight_oe: 0.0005
+  weight_ce: 1.5
   n_classes: 10
-  n_embedding: ${n_embedding}
-  weight_center: 0.5 # default, as given in the paper
   optimizer:
     _target_: torch.optim.Adam
     lr: 0.001
@@ -38,7 +43,7 @@ model:
     frequency: 1
   backbone:
     _target_: src.models.modules.wrn.WideResNet
-    num_classes: ${n_embedding}
+    num_classes: 10
     widen_factor: 2
     depth: 40
     drop_rate: 0.3
@@ -46,16 +51,11 @@ model:
 callbacks:
   lr_monitor:
     _target_: pytorch_lightning.callbacks.LearningRateMonitor
-  softmax:
-    _target_: src.callbacks.softmax.SoftmaxThresholding
-    use_in_val: True
-    use_in_test: True
-  energy:
-    _target_: src.callbacks.energy.EnergyBased
-    temperature: 1
-    use_in_val: True
-    use_in_test: True
   distance:
     _target_: src.callbacks.distance.DistanceThresholding
+    use_in_val: True
+    use_in_test: True
+  cac:
+    _target_: src.callbacks.cac.CACScorer
     use_in_val: True
     use_in_test: True

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Run all experiments
 datasets="cifar10 svhn cifar100"
-methods="mchad gmchad softmax center cac ii"
+methods="mchad gmchad gcenter gcac center cac ii softmax"
 log_dir="logs/multiruns/complete/$(date +"%D-%T")/"
 
 options="$@"

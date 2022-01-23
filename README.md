@@ -2,15 +2,18 @@
 
 # Multi-Class Hypersphere Anomaly Detection
 
+<a href="https://pytorch.org/get-started/locally/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-ee4c2c?logo=pytorch&logoColor=white"></a>
+<a href="https://pytorchlightning.ai/"><img alt="Lightning" src="https://img.shields.io/badge/-Lightning-792ee5?logo=pytorchlightning&logoColor=white"></a>
+<a href="https://hydra.cc/"><img alt="Config: Hydra" src="https://img.shields.io/badge/Config-Hydra-89b8cd"></a>
+<a href="https://github.com/ashleve/lightning-hydra-template"><img alt="Template" src="https://img.shields.io/badge/-Lightning--Hydra--Template-017F2F?style=flat&logo=github&labelColor=gray"></a><br>
 
-<a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/-Python 3.7+-blue?style=for-the-badge&logo=python&logoColor=white"></a>
-<a href="https://pytorch.org/get-started/locally/"><img alt="PyTorch" src="https://img.shields.io/badge/-PyTorch 1.8+-ee4c2c?style=for-the-badge&logo=pytorch&logoColor=white"></a>
-<a href="https://pytorchlightning.ai/"><img alt="Lightning" src="https://img.shields.io/badge/-Lightning 1.5+-792ee5?style=for-the-badge&logo=pytorchlightning&logoColor=white"></a>
-<a href="https://hydra.cc/"><img alt="Config: hydra" src="https://img.shields.io/badge/config-hydra 1.1-89b8cd?style=for-the-badge&labelColor=gray"></a>
-<a href="https://black.readthedocs.io/en/stable/"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-black.svg?style=for-the-badge&labelColor=gray"></a>
+[comment]: <> ([![Paper]&#40;http://img.shields.io/badge/paper-arxiv.1001.2234-B31B1B.svg&#41;]&#40;https://www.nature.com/articles/nature14539&#41;)
 
-This Repository contains the source code for the paper
-_Multi-Class Hypersphere Anomaly Detection_(MCHAD).
+[comment]: <> ([![Conference]&#40;http://img.shields.io/badge/AnyConference-year-4b44ce.svg&#41;]&#40;https://papers.nips.cc/paper/2020&#41;)
+
+This Repository contains the source code for the paper _Multi-Class Hypersphere Anomaly Detection_.
+
+
 
 ![mchad](img/mchad.png)
 
@@ -19,8 +22,7 @@ _Multi-Class Hypersphere Anomaly Detection_(MCHAD).
 ## Setup
 This repository is a fork of the
 [lightning-hydra-template](https://github.com/ashleve/lightning-hydra-template), so you might
-want to read their excellent instructions on how to use this software.
-We configured the Ray Launcher for parallelization.
+want to read their excellent instructions on how to use this software stack.
 
 First, create a python virtual environment, install dependencies, and
 add the `src`  directory to your python path.
@@ -32,7 +34,7 @@ pip install -r requirements.txt
 export PYTHONPATH="src/"
 ```
 
-## Run
+## Usage
 
 Experiments are defined in `config/experiments`.
 To run MCHAD on CIFAR10 run:
@@ -51,7 +53,14 @@ python run.py experiment=cifar10-mchad trainer.gpus=1
 ```
 to train on the GPU.
 
-
+### Seed Replicates
+You can run experiments for multiple random seeds in parallel with hydra sweeps:
+```shell
+python run.py -m experiment=cifar10-mchad trainer.gpus=1 seed="range(1,7)"
+```
+We configured the Ray Launcher for parallelization.
+Per default, we run experiments in parallel on 6 GPUs.
+You might have to adjust `config/hydra/launcher/ray.yaml`.
 
 <details>
 <summary><b>Live training metrics, embeddings etc. can be visualized with Tensorboard.</b></summary>
@@ -67,29 +76,24 @@ tensorboard --logdir logs/
 
 ## Replication
 
-### Experiments
 Experiments can be replicated by running `bash/run-rexperiments.sh`,
 which also accepts command line overrides, such as:
 ```
-bash/run-rexperiments.sh "dataset_dir=/path/to/your/dataset/directory/"
+bash/run-rexperiments.sh dataset_dir=/path/to/your/dataset/directory/
 ```
 
 All datasets will be downloaded automatically to the given `dataset_dir`,
-except for the 80 Million TinyImages Dataset ([mirror](http://www.archive.org/download/80-million-tiny-images-2-of-2/tiny_images.bin)), which has to be downloaded and placed there manually.
-If you do not want to use the TinyImages Dataset, you can get a cleaned version from
-[Hendrycks et al.](https://github.com/hendrycks/outlier-exposure). However, the results might be
-different.
+except for the cleaned 300kk TinyImages which you can get from
+[Hendrycks et al.](https://github.com/hendrycks/outlier-exposure). This has to be placed in ```${dataset_dir}/tiny-images/```.
 
 Results for each run will be written to `csv` files which have to be aggregated.
-You can find our results in the `notebooks/eval.ipynb`.
-Per default, we run experiments in parallel on 6 GPUs.
-You might have to adjust `config/hydra/launcher/ray.yaml` to configure parallelization.
+You can find the scripts in `notebooks/eval.ipynb`.
 
 ### Ablations
 
 To replicate the ablation experiments, run:
 ```shell
-bash/run-ablation.sh "dataset_dir=/path/to/your/dataset/directory/"
+bash/run-ablation.sh dataset_dir=/path/to/your/dataset/directory/
 ```
 
 ## Results
@@ -243,3 +247,12 @@ We average all results over 6 seed replicates and several benchmark outlier data
 ![mchad](img/auroc-CIFAR100.png)
 
 </details>
+
+## Extras
+Apart from the methods used in the paper, this repository also contains code for several other methods, including:
+* Softmax Thresholding
+* Energy Based Out-of-Distribution Detection
+* ODIN
+* Monte Carlo Dropout
+* OpenMax
+* Confidence Estimation Branch
