@@ -1,8 +1,0 @@
-defaults:
-  - default.yaml
-
-tscaling:
-  _target_: src.callbacks.tscaling.TemperatureScaling
-  temperature: 1000
-  use_in_val: True
-  use_in_test: True

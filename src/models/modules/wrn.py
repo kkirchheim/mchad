@@ -49,8 +49,8 @@ class BasicBlock(nn.Module):
             out = self.relu2(self.bn2(self.conv1(out)))
         else:
             out = self.relu2(self.bn2(self.conv1(x)))
-        # if self.droprate > 0:
-        #     out = F.dropout(out, p=self.droprate, training=self.training)
+        if self.droprate > 0:
+            out = F.dropout(out, p=self.droprate, training=self.training)
         out = self.conv2(out)
         if not self.equalInOut:
             return torch.add(self.convShortcut(x), out)

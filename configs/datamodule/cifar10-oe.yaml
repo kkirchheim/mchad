@@ -18,10 +18,6 @@ module2:
   dataset:
     _target_: src.datamodules.datasets.TinyImages300k
     datafile: ${dataset_dir}/tiny-images/300K_random_images.npy
-  #    _target_: src.datamodules.datasets.TinyImages
-  #    datafile: ${dataset_dir}/tiny-images/tiny_images.bin
-  #    cifar_index_file: ${dataset_dir}/tiny-images/80mn_cifar_idxs.txt
-  #    exclude_cifar: True
   normalize:
     # https://github.com/wetliu/energy_ood/blob/master/CIFAR/train.py
     mean:

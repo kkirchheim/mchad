@@ -249,7 +249,7 @@ We average all results over 6 seed replicates and several benchmark outlier data
 </details>
 
 ## Extras
-Apart from the methods used in the paper, this repository also contains code for several other methods, including:
+Apart from the ones used in the paper, this repository also contains code for several other methods, including:
 * Softmax Thresholding
 * Energy Based Out-of-Distribution Detection
 * ODIN

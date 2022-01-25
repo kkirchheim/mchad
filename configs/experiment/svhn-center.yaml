@@ -1,62 +1,23 @@
 # @package _global_
 
 defaults:
-  - override /trainer: null
+  - override /trainer: svhn
   - override /model: null
   - override /datamodule: svhn
-  - override /callbacks: null
+  - override /callbacks: center
   - override /logger: default
   - override /testmodules: svhn
+  - override /model/backbone: wideresnet
+  - override /model/scheduler: cosine
+  - override /model/optimizer: adam
 
 seed: 12345
 deterministic: True
 debug: True
 ignore_warnings: True
-epochs: 10
-n_embedding: 16
-
-trainer:
-  _target_: pytorch_lightning.Trainer
-  gpus: 0
-  min_epochs: ${epochs}
-  max_epochs: ${epochs}
-  weights_summary: null
 
 model:
   _target_: src.models.Center
   n_classes: 10
-  n_embedding: ${n_embedding}
+  n_embedding: 16
   weight_center: 0.5 # default, as given in the paper
-  optimizer:
-    _target_: torch.optim.Adam
-    lr: 0.001
-    weight_decay: 0.00005
-  scheduler:
-    scheduler:
-      _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-      T_0: 3920 # 392 * epochs ${epochs}
-    interval: step
-    frequency: 1
-  backbone:
-    _target_: src.models.modules.wrn.WideResNet
-    num_classes: ${n_embedding}
-    widen_factor: 2
-    depth: 40
-    drop_rate: 0.3
-
-callbacks:
-  lr_monitor:
-    _target_: pytorch_lightning.callbacks.LearningRateMonitor
-  softmax:
-    _target_: src.callbacks.softmax.SoftmaxThresholding
-    use_in_val: True
-    use_in_test: True
-  energy:
-    _target_: src.callbacks.energy.EnergyBased
-    temperature: 1
-    use_in_val: True
-    use_in_test: True
-  distance:
-    _target_: src.callbacks.distance.DistanceThresholding
-    use_in_val: True
-    use_in_test: True

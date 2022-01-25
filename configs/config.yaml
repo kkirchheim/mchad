@@ -4,14 +4,16 @@
 defaults:
   - trainer: minimal.yaml
   - model: null
-  - datamodule: svhn
+  - model/backbone: wideresnet
+  - model/scheduler: cosine
+  - model/optimizer: adam
+  - datamodule: cifar10
   - callbacks: default
   - logger: default # set logger here or use command line (e.g. `python run.py logger=wandb`)
-  - testmodules: null
-  - experiment: svhn-mchad
+  - testmodules: cifar10
   - hparams_search: null
-
   - hydra: default.yaml
+  - experiment: null
 
   # enable color logging
   - override hydra/hydra_logging: colorlog

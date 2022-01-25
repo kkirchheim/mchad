@@ -1,0 +1,13 @@
+lr_monitor:
+  _target_: pytorch_lightning.callbacks.LearningRateMonitor
+
+softmax:
+  _target_: src.callbacks.softmax.SoftmaxThresholding
+  use_in_val: True
+  use_in_test: True
+
+energy:
+  _target_: src.callbacks.energy.EnergyBased
+  temperature: 1
+  use_in_val: True
+  use_in_test: True

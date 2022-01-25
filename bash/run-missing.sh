@@ -1,7 +1,7 @@
 #!/bin/bash
 # Run missing experiments
-datasets="cifar10 svhn cifar100"
-methods="gcenter gcac"
+datasets="cifar100"
+methods="mchad gmchad gcenter gcac center cac ii"
 log_dir="logs/multiruns/missing/$(date +"%D-%T")/"
 
 options="$@"

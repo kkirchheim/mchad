@@ -1,6 +1,6 @@
 _target_: src.datamodules.SVHNDataModule
 normalize:
-  # https://github.com/wetliu/energy_ood/blob/master/CIFAR/train.py
+  # https://albumentations.ai/docs/autoalbument/examples/svhn/
   mean: [0.4376821, 0.4437697, 0.47280442]
   std: [0.19803012, 0.20101562, 0.19703614]
 data_dir: ${data_dir}

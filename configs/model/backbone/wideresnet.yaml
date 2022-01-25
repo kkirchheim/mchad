@@ -1,0 +1,5 @@
+_target_: src.models.modules.wrn.WideResNet
+num_classes: ${model.n_embedding}
+widen_factor: 2
+depth: 40
+drop_rate: 0.3

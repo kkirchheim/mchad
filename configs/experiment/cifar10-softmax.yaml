@@ -1,12 +1,15 @@
 # @package _global_
 
 defaults:
-  - override /trainer: null
+  - override /trainer: cifar10
   - override /model: null
   - override /datamodule: cifar10
-  - override /callbacks: null
+  - override /callbacks: softmax
   - override /logger: default
   - override /testmodules: cifar10
+  - override /model/backbone: wideresnet
+  - override /model/scheduler: cosine
+  - override /model/optimizer: adam
 
 seed: 12345
 deterministic: True
@@ -14,66 +17,6 @@ debug: True
 ignore_warnings: True
 epochs: 10
 
-trainer:
-  _target_: pytorch_lightning.Trainer
-  gpus: 0
-  min_epochs: ${epochs}
-  max_epochs: ${epochs}
-  weights_summary: null
-
 model:
   _target_: src.models.SoftMax
   n_classes: 10
-  optimizer:
-    _target_: torch.optim.Adam
-    lr: 0.001
-    weight_decay: 0.00005
-  scheduler:
-    scheduler:
-      _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-      T_0: 3920 # 392 * epochs ${epochs}
-    interval: step
-    frequency: 1
-  backbone:
-    _target_: src.models.modules.wrn.WideResNet
-    num_classes: 10
-    widen_factor: 2
-    depth: 40
-    drop_rate: 0.3
-
-callbacks:
-  lr_monitor:
-    _target_: pytorch_lightning.callbacks.LearningRateMonitor
-  softmax:
-    _target_: src.callbacks.softmax.SoftmaxThresholding
-    use_in_val: True
-    use_in_test: True
-  energy:
-    _target_: src.callbacks.energy.EnergyBased
-    temperature: 1
-    use_in_val: True
-    use_in_test: True
-#  mcd:
-#    _target_: src.callbacks.mcd.MonteCarloDropout
-#    num_classes: 10
-#    rounds: 30
-#    use_in_val: False
-#    use_in_test: True
-#  openmax:
-#    _target_: src.callbacks.openmax.OpenMax
-#    tailsize: 3
-#    alpha: 3
-#    euclid_weight: 0
-#    use_in_val: False
-#    use_in_test: True
-#  odin:
-#    _target_: src.callbacks.odin.ODIN
-#    eps: 0.02
-#    t: 1000
-#    use_in_val: False
-#    use_in_test: True
-#  tscaling:
-#    _target_: src.callbacks.tscaling.TemperatureScaling
-#    temperature: 1000
-#    use_in_val: True
-#    use_in_test: True

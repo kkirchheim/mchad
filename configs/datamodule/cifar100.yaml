@@ -1,4 +1,3 @@
-# cifar 10 with outlier exposure
 _target_: src.datamodules.CIFAR100DataModule
 normalize:
   # https://github.com/wetliu/energy_ood/blob/master/CIFAR/train.py

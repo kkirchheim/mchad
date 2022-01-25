@@ -1,47 +1,26 @@
 # @package _global_
 
 defaults:
-  - override /trainer: null
+  - override /trainer: cifar100
   - override /model: null
   - override /datamodule: cifar100
   - override /callbacks: null
   - override /logger: default
   - override /testmodules: cifar100
+  - override /model/backbone: wideresnet
+  - override /model/scheduler: cosine
+  - override /model/optimizer: adam
 
 seed: 12345
 deterministic: False # TODO: not all operations are implemented as deterministic
 debug: True
 ignore_warnings: True
-epochs: 10
-
-trainer:
-  _target_: pytorch_lightning.Trainer
-  gpus: 0
-  min_epochs: ${epochs}
-  max_epochs: ${epochs}
-  weights_summary: null
 
 model:
   _target_: src.models.CAC
   weight_anchor: 1.0
   magnitude: 1.0
   n_classes: 100
-  optimizer:
-    _target_: torch.optim.Adam
-    lr: 0.001
-    weight_decay: 0.00005
-  scheduler:
-    scheduler:
-      _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-      T_0: 3920 # 392 * epochs ${epochs}
-    interval: step
-    frequency: 1
-  backbone:
-    _target_: src.models.modules.wrn.WideResNet
-    num_classes: 100
-    widen_factor: 2
-    depth: 40
-    drop_rate: 0.3
 
 callbacks:
   lr_monitor:
