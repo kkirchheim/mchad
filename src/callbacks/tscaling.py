@@ -30,7 +30,7 @@ class TemperatureScaling(pl.callbacks.Callback):
         conf, y_hat = logits.softmax(dim=1).max(dim=1)
 
         log_osr_metrics(pl_module, conf, stage, y, method=TemperatureScaling.NAME)
-        log_uncertainty_metrics(pl_module, conf, stage, y, conf, method=TemperatureScaling.NAME)
+        log_uncertainty_metrics(pl_module, conf, stage, y, y_hat, method=TemperatureScaling.NAME)
         log_error_detection_metrics(
             pl_module, conf, stage, y, y_hat, method=TemperatureScaling.NAME
         )

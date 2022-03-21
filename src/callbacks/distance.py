@@ -29,7 +29,7 @@ class DistanceThresholding(pl.callbacks.Callback):
 
         log_osr_metrics(pl_module, -min_dist, stage, y, method=DistanceThresholding.NAME)
         log_uncertainty_metrics(
-            pl_module, -min_dist, stage, y, -min_dist, method=DistanceThresholding.NAME
+            pl_module, -min_dist, stage, y, y_hat, method=DistanceThresholding.NAME
         )
         log_error_detection_metrics(
             pl_module, -min_dist, stage, y, y_hat, method=DistanceThresholding.NAME

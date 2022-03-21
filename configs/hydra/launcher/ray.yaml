@@ -1,7 +1,7 @@
 ray:
   init:
-    num_gpus: 6
+    num_gpus: 21
     num_cpus: 80
   remote:
     num_gpus: 1
-    num_cpus: 4
+    num_cpus: 2

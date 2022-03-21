@@ -31,7 +31,7 @@ class EnergyBased(pl.callbacks.Callback):
 
         log.info(energy.shape)
         log_osr_metrics(pl_module, -energy, stage, y, method=EnergyBased.NAME)
-        log_uncertainty_metrics(pl_module, -energy, stage, y, -energy, method=EnergyBased.NAME)
+        log_uncertainty_metrics(pl_module, -energy, stage, y, y_hat, method=EnergyBased.NAME)
         log_error_detection_metrics(pl_module, -energy, stage, y, y_hat, method=EnergyBased.NAME)
 
         try:

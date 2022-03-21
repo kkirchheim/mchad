@@ -27,7 +27,7 @@ class SoftmaxThresholding(pl.callbacks.Callback):
         conf, y_hat = self.buffer[SoftmaxThresholding.BUFFER_KEY].softmax(dim=1).max(dim=1)
 
         log_osr_metrics(pl_module, conf, stage, y, method=SoftmaxThresholding.NAME)
-        log_uncertainty_metrics(pl_module, conf, stage, y, conf, method=SoftmaxThresholding.NAME)
+        log_uncertainty_metrics(pl_module, conf, stage, y, y_hat, method=SoftmaxThresholding.NAME)
         log_error_detection_metrics(
             pl_module, conf, stage, y, y_hat, method=SoftmaxThresholding.NAME
         )
