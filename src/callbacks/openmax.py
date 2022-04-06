@@ -3,8 +3,8 @@ import time
 
 import pytorch_lightning as pl
 import torch
-
 from osr.openmax import OpenMax as OpenMaxLayer
+
 from src.utils.logger import TensorBuffer
 from src.utils.metrics import log_error_detection_metrics, log_osr_metrics, log_uncertainty_metrics
 

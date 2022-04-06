@@ -6,7 +6,7 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import transforms
 
-from osr.ossim import TargetMapping
+from oodtk.transforms import TargetMapping
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class ToRBG(object):
     def __call__(self, x):
         try:
             return x.convert("RGB")
-        except:
+        except Exception:
             # we assume it already is RGB
             return x
         # if type(x) is PIL.Image:
@@ -67,10 +67,8 @@ class MyBaseDataModule(LightningDataModule):
         ]
 
         if normalize:
-            log.info(f"Adding normalization")
-            train_trans.append(
-                transforms.Normalize(normalize["mean"], normalize["std"])
-            )
+            log.info("Adding normalization")
+            train_trans.append(transforms.Normalize(normalize["mean"], normalize["std"]))
             test_trans.append(transforms.Normalize(normalize["mean"], normalize["std"]))
 
         self.train_trans = transforms.Compose(train_trans)
@@ -79,14 +77,12 @@ class MyBaseDataModule(LightningDataModule):
         self.target_transform = None
 
         if ood_classes_val or ood_classes_test:
-            log.info(f"OOD classes are set. Sampling Open Set Simulation")
+            log.info("OOD classes are set. Sampling Open Set Simulation")
             # select several classes as unknown.
             n_leave_out = ood_classes_val + ood_classes_test
             labels = np.random.permutation(range(self.num_classes))
             train_in = labels[0 : self.num_classes - n_leave_out]
-            val_out = labels[
-                self.num_classes - n_leave_out : self.num_classes - ood_classes_test
-            ]
+            val_out = labels[self.num_classes - n_leave_out : self.num_classes - ood_classes_test]
             test_out = labels[self.num_classes - ood_classes_test :]
             self.target_transform = TargetMapping(
                 train_in_classes=train_in,
@@ -107,15 +103,15 @@ class MyBaseDataModule(LightningDataModule):
             log.info(f"Initializing data split seed with {self.data_split_seed}")
             # self.split_generator.manual_seed(self.data_split_seed)
         else:
-            log.info(f"Not initializing data split seed")
+            log.info("Not initializing data split seed")
 
         # create a generator used to determine the ordering of the data
-        self.order_generator = None  #  torch.Generator()
+        self.order_generator = None
         if self.data_order_seed:
             log.info(f"Initializing data ordering seed with {self.data_order_seed}")
             # self.order_generator.manual_seed(self.data_order_seed)
         else:
-            log.info(f"Not initializing data ordering seed")
+            log.info("Not initializing data ordering seed")
 
     def train_dataloader(self):
         if not self.data_train:

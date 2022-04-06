@@ -22,8 +22,10 @@ class YamlLogger(plog.LightningLoggerBase):
 
     def log_hyperparams(self, params: argparse.Namespace, *args, **kwargs):
         log.info(f"Writing hyperparameters to '{self.filename}'")
+
         with open(self.filename, "w") as f:
-            f.write(OmegaConf.to_yaml(params))
+            c = OmegaConf.create(dict({k: v for k, v in params.items()}))
+            f.write(OmegaConf.to_yaml(c))
 
     @property
     def experiment(self) -> Any:

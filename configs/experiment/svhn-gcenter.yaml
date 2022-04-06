@@ -24,4 +24,3 @@ model:
   weight_center: 1.0
   weight_oe: 0.0005
   weight_ce: 1.5
-  optimizer:

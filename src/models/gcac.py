@@ -3,14 +3,13 @@ from typing import Any, List
 
 import hydra
 import torch
-from osr.utils import is_known
 from pytorch_lightning import LightningModule
 
-from osr.nn.loss import CACLoss
+from oodtk.loss import CACLoss
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
-from .mchad import MCHADRegularizationLoss
+from .mchad import CenterRegularizationLoss
 
 log = logging.getLogger(__name__)
 
@@ -42,13 +41,13 @@ class GCAC(LightningModule):
         self.model = hydra.utils.instantiate(backbone)
 
         # Note: we will apply weights later
-        self.cac_loss = CACLoss(n_classes=n_classes, magnitude=magnitude, weight_anchor=1.0)
+        self.cac_loss = CACLoss(n_classes=n_classes, magnitude=magnitude, lambda_=1.0)
 
         self.weight_oe = weight_oe
         self.weight_ce = weight_ce  # weight for the touplet loss
         self.weight_center = weight_center
 
-        self.regu_loss = MCHADRegularizationLoss(margin=margin)
+        self.regu_loss = CenterRegularizationLoss(margin=margin)
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
@@ -58,21 +57,12 @@ class GCAC(LightningModule):
 
     def step(self, batch: Any):
         x, y = batch
-        known = is_known(y)
         z = self.forward(x)
 
         distmat = self.cac_loss.calculate_distances(z)
 
-        if known.any():
-            anchor_loss, tuplet_loss = self.cac_loss(z[known], y[known])
-        else:
-            anchor_loss = 0
-            tuplet_loss = 0
-
-        if (~known).any():
-            loss_out = self.regu_loss(distmat[~known])
-        else:
-            loss_out = 0
+        anchor_loss, tuplet_loss = self.cac_loss(distmat, y)
+        loss_out = self.regu_loss(distmat, y)
 
         preds = torch.argmin(distmat, dim=1)
 

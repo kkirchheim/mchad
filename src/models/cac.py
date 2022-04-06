@@ -3,10 +3,10 @@ from typing import Any, List
 
 import hydra
 import torch
-from osr.utils import is_known
 from pytorch_lightning import LightningModule
 
-from osr.nn.loss import CACLoss
+from oodtk.loss import CACLoss
+from oodtk.utils import is_known
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
@@ -36,9 +36,7 @@ class CAC(LightningModule):
 
         self.model = hydra.utils.instantiate(backbone)
 
-        self.cac_loss = CACLoss(
-            n_classes=n_classes, magnitude=magnitude, weight_anchor=weight_anchor
-        )
+        self.cac_loss = CACLoss(n_classes=n_classes, magnitude=magnitude, lambda_=weight_anchor)
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
@@ -48,16 +46,12 @@ class CAC(LightningModule):
 
     def step(self, batch: Any):
         x, y = batch
-        known = is_known(y)
         z = self.forward(x)
 
-        if known.any():
-            anchor_loss, tuplet_loss = self.cac_loss(z[known], y[known])
-        else:
-            anchor_loss, tuplet_loss = 0, 0
+        distmat = self.cac_loss.calculate_distances(z)
+        anchor_loss, tuplet_loss = self.cac_loss(distmat, y)
 
         with torch.no_grad():
-            distmat = self.cac_loss.calculate_distances(z)
             preds = torch.argmin(distmat, dim=1)
 
         return anchor_loss, tuplet_loss, preds, distmat, z

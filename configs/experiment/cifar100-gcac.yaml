@@ -19,6 +19,7 @@ ignore_warnings: True
 model:
   _target_: src.models.GCAC
   n_classes: 100
+  n_embedding: ${model.n_classes}
   margin: 1.0
   magnitude: 1.0
   weight_center: 1.0

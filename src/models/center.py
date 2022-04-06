@@ -3,11 +3,11 @@ from typing import Any, List
 
 import hydra
 import torch
-from osr.utils import is_known
 from pytorch_lightning import LightningModule
 from torch import nn
 
-from osr.nn.loss import CenterLoss
+from oodtk.loss import CenterLoss, CrossEntropy
+from oodtk.utils import is_known
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
@@ -42,7 +42,7 @@ class Center(LightningModule):
         self.classifier = nn.Linear(n_embedding, n_classes)
 
         # loss function
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = CrossEntropy()
 
         self.center_loss = CenterLoss(n_classes=n_classes, n_embedding=n_embedding)
         self.weight_center = weight_center
@@ -55,20 +55,13 @@ class Center(LightningModule):
 
     def step(self, batch: Any):
         x, y = batch
-        known = is_known(y)
-        embedding = self.forward(x)
-        logits = self.classifier(embedding)
-
-        if known.any():
-            loss_center = self.center_loss(embedding[known], y[known])
-            loss_nll = self.criterion(logits[known], y[known])
-        else:
-            loss_nll = 0
-            loss_center = 0
-
+        z = self.forward(x)
+        d = self.center_loss.calculate_distances(z)
+        loss_center = self.center_loss(d, y)
+        logits = self.classifier(z)
+        loss_nll = self.criterion(logits, y)
         preds = torch.argmax(logits, dim=1)
-
-        return loss_center, loss_nll, preds, logits, y, embedding
+        return loss_center, loss_nll, preds, logits, y, z
 
     def training_step(self, batch: Any, batch_idx: int, **kwargs):
         loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)

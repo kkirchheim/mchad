@@ -7,9 +7,9 @@
 <a href="https://hydra.cc/"><img alt="Config: Hydra" src="https://img.shields.io/badge/Config-Hydra-89b8cd"></a>
 <a href="https://github.com/ashleve/lightning-hydra-template"><img alt="Template" src="https://img.shields.io/badge/-Lightning--Hydra--Template-017F2F?style=flat&logo=github&labelColor=gray"></a><br>
 
-[comment]: <> ([![Paper]&#40;http://img.shields.io/badge/paper-arxiv.1001.2234-B31B1B.svg&#41;]&#40;https://www.nature.com/articles/nature14539&#41;)
+<a href="https://github.com/ashleve/lightning-hydra-template"><img alt="Template" src="http://img.shields.io/badge/ICPR-2022-4b44ce.svg"></a><br>
 
-[comment]: <> ([![Conference]&#40;http://img.shields.io/badge/AnyConference-year-4b44ce.svg&#41;]&#40;https://papers.nips.cc/paper/2020&#41;)
+
 
 This Repository contains the source code for the paper _Multi-Class Hypersphere Anomaly Detection_.
 
@@ -256,3 +256,12 @@ Apart from the ones used in the paper, this repository also contains code for se
 * Monte Carlo Dropout
 * OpenMax
 * Confidence Estimation Branch
+
+
+## Citation
+
+```text
+{
+
+}
+```

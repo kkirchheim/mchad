@@ -3,15 +3,15 @@ from typing import Any, List
 
 import hydra
 import torch
-from osr.utils import is_known
 from pytorch_lightning import LightningModule
 from torch import nn
 
-from osr.nn.loss import CenterLoss
+from oodtk.loss import CenterLoss, CrossEntropy
+from oodtk.utils import is_known
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
-from .mchad import MCHADRegularizationLoss, SoftMarginLoss
+from .mchad import CenterRegularizationLoss
 
 log = logging.getLogger(__name__)
 
@@ -46,14 +46,11 @@ class GCenter(LightningModule):
         self.model = hydra.utils.instantiate(backbone)
         self.classifier = nn.Linear(n_embedding, n_classes)
 
-        # loss function
-        self.criterion = torch.nn.CrossEntropyLoss()
-
         # loss function components
-        self.soft_margin_loss = SoftMarginLoss(n_classes=n_classes, z_dim=n_embedding)
-        self.nll_loss = nn.CrossEntropyLoss()
+        self.soft_margin_loss = CenterLoss(n_classes=n_classes, n_embedding=n_embedding)
+        self.nll_loss = CrossEntropy()
         # since we use a soft margin loss, the "radius" of the spheres is the margin
-        self.regu_loss = MCHADRegularizationLoss(margin=margin)
+        self.regu_loss = CenterRegularizationLoss(margin=margin)
 
         self.weight_center = weight_center
         self.weight_oe = weight_oe
@@ -72,18 +69,9 @@ class GCenter(LightningModule):
 
         distmat = self.soft_margin_loss.calculate_distances(z)
         logits = self.classifier(z)
-
-        if known.any():
-            loss_center = self.soft_margin_loss(distmat[known], y[known])
-            loss_nll = self.criterion(logits[known], y[known])
-        else:
-            loss_nll = 0
-            loss_center = 0
-
-        if (~known).any():
-            loss_out = self.regu_loss(distmat[~known])
-        else:
-            loss_out = 0
+        loss_center = self.soft_margin_loss(distmat, y)
+        loss_nll = self.nll_loss(logits, y)
+        loss_out = self.regu_loss(distmat, y)
 
         y_hat = torch.argmin(distmat, dim=1)
 
@@ -94,9 +82,16 @@ class GCenter(LightningModule):
             # we are in multi-training-set mode
             batch = torch.cat([b[0] for b in batch]), torch.cat([b[1] for b in batch])
 
-        loss_center, loss_nll, loss_out, preds, logits, targets, embedding, distmat = self.step(
-            batch
-        )
+        (
+            loss_center,
+            loss_nll,
+            loss_out,
+            preds,
+            logits,
+            targets,
+            embedding,
+            distmat,
+        ) = self.step(batch)
 
         x, y = batch
 
@@ -133,9 +128,16 @@ class GCenter(LightningModule):
         save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        loss_center, loss_nll, loss_out, preds, logits, targets, embedding, distmat = self.step(
-            batch
-        )
+        (
+            loss_center,
+            loss_nll,
+            loss_out,
+            preds,
+            logits,
+            targets,
+            embedding,
+            distmat,
+        ) = self.step(batch)
 
         loss = (
             self.weight_center * loss_center
@@ -172,9 +174,16 @@ class GCenter(LightningModule):
         save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        loss_center, loss_nll, loss_out, preds, logits, targets, embedding, distmat = self.step(
-            batch
-        )
+        (
+            loss_center,
+            loss_nll,
+            loss_out,
+            preds,
+            logits,
+            targets,
+            embedding,
+            distmat,
+        ) = self.step(batch)
         loss = (
             self.weight_center * loss_center
             + self.weight_nll * loss_nll

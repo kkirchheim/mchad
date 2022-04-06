@@ -10,14 +10,12 @@ import torch.nn.functional as F
 import torchmetrics.functional as metrics
 from pytorch_lightning.utilities import rank_zero_only
 
-from osr.utils import (
+from oodtk.utils import (
     contains_known,
     contains_known_and_unknown,
     contains_unknown,
     is_known,
-    is_known_unknown,
     is_unknown,
-    is_unknown_unknown,
 )
 
 log = logging.getLogger(__name__)

@@ -20,7 +20,8 @@ ignore_warnings: True
 model:
   _target_: src.models.GCAC
   n_classes: 10
-  n_embedding:
+  n_embedding: ${model.n_classes}
+  weight_anchor: 1.0
   margin: 1.0
   magnitude: 1.0
   weight_center: 1.0

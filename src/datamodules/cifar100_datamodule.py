@@ -4,7 +4,6 @@ from typing import Optional, Tuple
 import numpy as np
 from torchvision.datasets import CIFAR100
 
-from osr.ossim import TargetMapping
 from .base import MyBaseDataModule
 
 log = logging.getLogger(__name__)
@@ -28,16 +27,16 @@ class CIFAR100DataModule(MyBaseDataModule):
         # self.dims is returned when you call datamodule.size()
         self.dims = (3, 32, 32)
 
-        # TODO: make configurable
-        labels = np.random.permutation(range(100))
-        train_in = labels[:80]
-        train_out = []
-        test_out = labels[80:]
-        self.mapping = TargetMapping(
-            train_in_classes=train_in,
-            train_out_classes=train_out,
-            test_out_classes=test_out,
-        )
+        # # TODO: make configurable
+        # labels = np.random.permutation(range(100))
+        # train_in = labels[:80]
+        # train_out = []
+        # test_out = labels[80:]
+        # self.mapping = TargetMapping(
+        #     train_in_classes=train_in,
+        #     train_out_classes=train_out,
+        #     test_out_classes=test_out,
+        # )
 
     @property
     def num_classes(self) -> int:
@@ -51,7 +50,7 @@ class CIFAR100DataModule(MyBaseDataModule):
 
     def setup(self, stage: Optional[str] = None):
         """Load data. Set variables: self.data_train, self.data_val, self.data_test."""
-        log.info(f"Datamodule setup")
+        log.info("Datamodule setup")
         super().setup()
         train_set = CIFAR100(
             self.data_dir,

@@ -19,7 +19,7 @@ ignore_warnings: True
 model:
   _target_: src.models.GCenter
   n_classes: 10
-  n_embedding: ${n_embedding} # has to match output of backbone
+  n_embedding: 16 # has to match output of backbone
   margin: 1.0
   weight_center: 1.0
   weight_oe: 0.0005

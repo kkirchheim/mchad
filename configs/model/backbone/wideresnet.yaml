@@ -1,4 +1,5 @@
 _target_: src.models.modules.wrn.WideResNet
+# parameter is called num_classes, but referres to the number of output neurons
 num_classes: ${model.n_embedding}
 widen_factor: 2
 depth: 40

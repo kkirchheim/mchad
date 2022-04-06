@@ -4,9 +4,9 @@ from typing import Any, List
 import hydra
 import torch
 from pytorch_lightning import LightningModule
+from torch.nn import BatchNorm1d
 
-from osr.nn.loss import IILoss
-from osr.utils import is_known
+from oodtk.loss import IILoss
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
@@ -42,26 +42,25 @@ class IIModel(LightningModule):
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
 
+        self.bn = BatchNorm1d(n_embedding)
+
     def forward(self, x: torch.Tensor):
         return self.model(x)
 
     def on_train_epoch_start(self) -> None:
         # this implementation uses running average estimates for the centers.
         # these should be reset regularly
-        self.ii_loss.reset_running_stats()
+        self.ii_loss.centers.reset_running_stats()
 
     def step(self, batch: Any):
         x, y = batch
-        known = is_known(y)
         z = self.forward(x)
 
+        # do additional batch norm layer to embedding
+        z = self.bn(z)
+
+        intra_spread, inter_separation = self.ii_loss(z, y)
         dists = self.ii_loss.calculate_distances(z)
-
-        if known.any():
-            intra_spread, inter_separation = self.ii_loss(z[known], y[known])
-        else:
-            intra_spread, inter_separation = 0, 0
-
         preds = torch.argmin(dists, dim=1)
 
         return intra_spread, inter_separation, preds, dists, z

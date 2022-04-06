@@ -18,5 +18,6 @@ deterministic: False
 model:
   _target_: src.models.CAC
   n_classes: 10
+  n_embedding: ${model.n_classes}
   weight_anchor: 1.0
   magnitude: 1.0
