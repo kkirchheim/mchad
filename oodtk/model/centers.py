@@ -15,16 +15,16 @@ class ClassCenters(nn.Module):
 
     def __init__(self, n_classes, n_features, fixed=False):
         """
-        Centers are initialized as unit vectors, scaled by the magnitude.
+        Several methods use a center for each class, also known as class proxy or class prototype.
 
-        :param n_classes: number of classes
+        :param n_classes: number of classes vectors
         """
         super(ClassCenters, self).__init__()
         # anchor points are fixed, so they do not require gradients
-        self.params = nn.Parameter(torch.zeros(size=(n_classes, n_features)))
+        self._params = nn.Parameter(torch.zeros(size=(n_classes, n_features)))
 
         if fixed:
-            self.params.requires_grad = False
+            self._params.requires_grad = False
 
     @property
     def num_classes(self):
@@ -35,11 +35,11 @@ class ClassCenters(nn.Module):
         return self.params.shape[1]
 
     @property
-    def centers(self):
+    def params(self):
         """
         Class centers, a.k.a. Anchors
         """
-        return self.params
+        return self._params
 
     def forward(self, embedding) -> torch.Tensor:
         """
@@ -59,16 +59,18 @@ class ClassCenters(nn.Module):
 
 
 class RunningCenters(nn.Module):
-    """"""
+    """
+    Estimates class centers from batches of data using a running mean estimator.
+    """
 
-    def __init__(self, num_classes, n_embedding):
+    def __init__(self, n_classes, n_embedding):
         """
 
-        :param num_classes:
+        :param n_classes:
         :param n_embedding:
         """
         super(RunningCenters, self).__init__()
-        self.num_classes = num_classes
+        self.num_classes = n_classes
         self.n_embedding = n_embedding
         # create buffer for centers. those buffers will be updated during training, and are fixed during evaluation
         running_centers = torch.empty(

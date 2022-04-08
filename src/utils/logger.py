@@ -246,7 +246,7 @@ def save_embeddings(
     images=None,
     targets=None,
     tag="default",
-    limit=5000,
+    limit=10000,
 ):
     """
     Helper for saving embeddings etc. to tensorboard
@@ -263,7 +263,10 @@ def save_embeddings(
     log.info("Saving embeddings")
 
     # limit number of saved entries so tensorboard does not crash because of too many sprites
-    indexes = torch.randperm(len(embedding))[:limit]
+    if limit:
+        indexes = torch.randperm(len(embedding))[:limit]
+    else:
+        indexes = torch.arange(len(embedding))
 
     args = {
         "known": is_known(targets)[indexes],

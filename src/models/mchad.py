@@ -32,6 +32,7 @@ class MCHAD(LightningModule):
         n_classes=10,
         n_embedding=10,
         margin=1.0,
+        radius=0.0,
         pretrained=None,
         **kwargs,
     ):
@@ -44,7 +45,7 @@ class MCHAD(LightningModule):
         self.model = hydra.utils.instantiate(backbone)
 
         # loss function components
-        self.soft_margin_loss = CenterLoss(n_classes=n_classes, n_embedding=n_embedding)
+        self.soft_margin_loss = CenterLoss(n_classes=n_classes, n_dim=n_embedding, radius=radius)
         self.nll_loss = CrossEntropy()
         # since we use a soft margin loss, the "radius" of the spheres is the margin
         self.regu_loss = CenterRegularizationLoss(margin=margin)
@@ -118,6 +119,14 @@ class MCHAD(LightningModule):
         log_classification_metrics(self, "train", target, predictions, -dists)
         save_embeddings(self, dists, z, x, target, tag="train")
 
+        # save centers
+        save_embeddings(
+            self,
+            embedding=self.soft_margin_loss.centers.params.data,
+            targets=np.arange(self.soft_margin_loss.centers.num_classes),
+            tag="centers",
+        )
+
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, loss_out, y_hat, dists, z = self.step(batch)
         loss = (
@@ -170,13 +179,13 @@ class MCHAD(LightningModule):
                 "Distances/unknown/val", unknown_dists, global_step=self.global_step
             )
 
-        # # save centers
-        # save_embeddings(
-        #     self,
-        #     embedding=self.soft_margin_loss.centers,
-        #     targets=np.arange(self.soft_margin_loss.centers.shape[0]),
-        #     tag="centers",
-        # )
+        # save centers
+        save_embeddings(
+            self,
+            embedding=self.soft_margin_loss.centers.params.data,
+            targets=np.arange(self.soft_margin_loss.centers.num_classes),
+            tag="centers",
+        )
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, loss_out, y_hat, dists, z = self.step(batch)

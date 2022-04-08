@@ -33,7 +33,7 @@ class IILoss(nn.Module):
         """
         super(IILoss, self).__init__()
         self.num_classes = n_classes
-        self.running_centers = RunningCenters(num_classes=n_classes, n_embedding=n_embedding)
+        self.running_centers = RunningCenters(n_classes=n_classes, n_embedding=n_embedding)
 
     @property
     def centers(self) -> RunningCenters:
@@ -66,7 +66,7 @@ class IILoss(nn.Module):
         dists = pairwise_distances(mu)
         # set diagonal elements to "high" value (this value will limit the inter seperation, so cluster
         # do not drift apart infinitely)
-        dists[torch.eye(self.num_classes, dtype=torch.bool)] = 1e24
+        dists[torch.eye(len(mu), dtype=torch.bool)] = 1e24
         return dists
 
     def calculate_distances(self, x):

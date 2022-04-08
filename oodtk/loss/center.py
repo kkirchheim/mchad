@@ -11,29 +11,43 @@ log = logging.getLogger(__name__)
 
 class CenterLoss(nn.Module):
     """
-    Center Loss.
+    Generalized version of the *Center Loss* from the Paper
+    *A Discriminative Feature Learning Approach for Deep Face Recognition*.
+
+    Calculates
+    .. math :: \\sum_{x,y} d(x,\\mu_y)
+
+    where d is some distance. More generally, if could be any dissimilarity function, like the squared distance,
+    which is not a proper distance metric.
+
+    With radius :math:`r=0` this and the squared euclidean distance, this is also referred to as the
+    *soft-margin loss*.
 
     :see Implementation: https://github.com/KaiyangZhou/pytorch-center-loss
     :see Paper: https://ydwen.github.io/papers/WenECCV16.pdf
     """
 
-    def __init__(self, n_classes, n_embedding, magnitude=1, fixed=False):
+    def __init__(self, n_classes, n_dim, magnitude=1, radius=0.0, fixed=False):
         """
         :param n_classes: number of classes.
-        :param n_embedding: feature dimension.
-        :param magnitude:
+        :param n_dim: dimensionality of center space
+        :param magnitude:  scale :math:`\\lambda` used for center initialization
+        :param radius: radius :math:`r` of spheres, lower bound for distance from center that is penalized
         :param fixed: false if centers should be learnable
         """
         super(CenterLoss, self).__init__()
         self.num_classes = n_classes
-        self.feat_dim = n_embedding
+        self.feat_dim = n_dim
         self.magnitude = magnitude
-        self.centers = ClassCenters(n_classes=n_classes, n_features=n_embedding, fixed=fixed)
+        self.radius = radius
+        self.centers = ClassCenters(n_classes=n_classes, n_features=n_dim, fixed=fixed)
         self._init_centers()
 
     def _init_centers(self):
-        # In the published code, they initialize centers randomly.
-        # However, this might bot be optimal if the loss is used without an additional inter-class-discriminability term
+        # In the published code, Wen et al. initialize centers randomly.
+        # However, this might bot be optimal if the loss is used without an additional
+        # inter-class-discriminability term.
+        # The Class Anchor Clustering initializes the centers as scaled unit vectors.
         if self.num_classes == self.feat_dim:
             torch.nn.init.eye_(self.centers.centers)
             if not self.centers.centers.requires_grad:
@@ -42,7 +56,7 @@ class CenterLoss(nn.Module):
         # different then the number of classes
         # torch.nn.init.orthogonal_(self.centers, gain=10)
         else:
-            torch.nn.init.normal_(self.centers.centers)
+            torch.nn.init.normal_(self.centers.params)
             if self.magnitude != 1:
                 log.warning("Not applying magnitude parameter.")
 
@@ -66,7 +80,7 @@ class CenterLoss(nn.Module):
             classes = torch.arange(self.num_classes).long().to(distmat.device)
             target = target.unsqueeze(1).expand(batch_size, self.num_classes)
             mask = target.eq(classes.expand(batch_size, self.num_classes))
-            dist = distmat * mask.float()
+            dist = (distmat - self.radius).relu() * mask.float()
             loss = dist.clamp(min=1e-12, max=1e12).mean()
         else:
             loss = torch.tensor(0.0, device=distmat.device)

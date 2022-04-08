@@ -1,12 +1,15 @@
 # @package _global_
 
 defaults:
-  - override /trainer: null
+  - override /trainer: svhn
   - override /model: null
   - override /datamodule: svhn
-  - override /callbacks: null
+  - override /callbacks: cac
   - override /logger: default
   - override /testmodules: svhn
+  - override /model/backbone: wideresnet
+  - override /model/scheduler: cosine
+  - override /model/optimizer: adam
 
 seed: 12345
 deterministic: True

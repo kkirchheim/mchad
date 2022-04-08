@@ -44,7 +44,7 @@ class Center(LightningModule):
         # loss function
         self.criterion = CrossEntropy()
 
-        self.center_loss = CenterLoss(n_classes=n_classes, n_embedding=n_embedding)
+        self.center_loss = CenterLoss(n_classes=n_classes, n_dim=n_embedding)
         self.weight_center = weight_center
 
         # count the number of calls to test_epoch_end

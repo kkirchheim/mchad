@@ -47,7 +47,7 @@ class GCenter(LightningModule):
         self.classifier = nn.Linear(n_embedding, n_classes)
 
         # loss function components
-        self.soft_margin_loss = CenterLoss(n_classes=n_classes, n_embedding=n_embedding)
+        self.soft_margin_loss = CenterLoss(n_classes=n_classes, n_dim=n_embedding)
         self.nll_loss = CrossEntropy()
         # since we use a soft margin loss, the "radius" of the spheres is the margin
         self.regu_loss = CenterRegularizationLoss(margin=margin)

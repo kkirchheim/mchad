@@ -6,7 +6,7 @@ defaults:
   - override /datamodule: svhn
   - override /callbacks: cac
   - override /logger: default
-  - override /testmodules: ii
+  - override /testmodules: svhn
   - override /model/backbone: wideresnet
   - override /model/scheduler: cosine
   - override /model/optimizer: adam

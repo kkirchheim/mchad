@@ -2,7 +2,7 @@
 
 # specify here default training configuration
 defaults:
-  - trainer: minimal.yaml
+  - trainer: cifar10
   - model: null
   - model/backbone: wideresnet
   - model/scheduler: cosine
@@ -29,7 +29,7 @@ work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
 data_dir: ${work_dir}/data/
-dataset_dir: /home/ki/datasets/
+dataset_dir: ${work_dir}/data/
 
 # use `python run.py debug=true` for easy debugging!
 # this will run 1 train, val and test loop with only 1 batch

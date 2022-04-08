@@ -248,8 +248,24 @@ We average all results over 6 seed replicates and several benchmark outlier data
 
 </details>
 
+## Embedding Visualization
+
+### MCHAD
+```sh
+experiment=svhn-mchad trainer.gpus=1 model.weight_center=10.0 trainer.min_epochs=100 model.n_embedding=2
+```
+![mchad-embedding](img/mchad.gif)
+
+### G-MCHAD
+
+```sh
+experiment=svhn-gmchad trainer.gpus=1 model.weight_center=10.0 trainer.min_epochs=100  model.n_embedding=2
+```
+![mchad-embedding](img/gmchad.gif)
+
+
 ## Extras
-Apart from the ones used in the paper, this repository also contains code for several other methods, including:
+Apart from the ones used in the paper, this repository also contains code for several other detection methods, including:
 * Softmax Thresholding
 * Energy Based Out-of-Distribution Detection
 * ODIN
@@ -265,3 +281,6 @@ Apart from the ones used in the paper, this repository also contains code for se
 
 }
 ```
+
+
+[comment]: <> (experiment=cifar10-gmchad trainer.gpus=1 trainer.min_epochs=100 model.weight_center=2.0 dataset_dir=/home/ki/projects/work/mchad/data/ model.n_embedding=2/)
