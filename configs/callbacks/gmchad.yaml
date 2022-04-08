@@ -1,7 +1,0 @@
-lr_monitor:
-  _target_: pytorch_lightning.callbacks.LearningRateMonitor
-
-distance:
-  _target_: src.callbacks.distance.DistanceThresholding
-  use_in_val: True
-  use_in_test: True

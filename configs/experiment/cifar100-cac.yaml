@@ -4,7 +4,7 @@ defaults:
   - override /trainer: cifar100
   - override /model: null
   - override /datamodule: cifar100
-  - override /callbacks: null
+  - override /callbacks: cac
   - override /logger: default
   - override /testmodules: cifar100
   - override /model/backbone: wideresnet

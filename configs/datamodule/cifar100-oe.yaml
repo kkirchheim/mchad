@@ -16,8 +16,9 @@ module1:
 module2:
   _target_: src.datamodules.SingleOODDataModule
   dataset:
-    _target_: src.datamodules.datasets.TinyImages300k
-    datafile: ${dataset_dir}/tiny-images/300K_random_images.npy
+    _target_: oodtk.dataset.img.TinyImages300k
+    root: ${dataset_dir}/tiny-images/
+    download: True
   normalize:
     # https://github.com/wetliu/energy_ood/blob/master/CIFAR/train.py
     mean:

@@ -3,16 +3,16 @@
 # specify here default training configuration
 defaults:
   - trainer: cifar10
-  - model: null
+  - model: default
   - model/backbone: wideresnet
   - model/scheduler: cosine
   - model/optimizer: adam
   - datamodule: cifar10
-  - callbacks: default
+  - callbacks: mchad
   - logger: default # set logger here or use command line (e.g. `python run.py logger=wandb`)
   - testmodules: cifar10
   - hparams_search: null
-  - hydra: default.yaml
+  - hydra: default
   - experiment: null
 
   # enable color logging

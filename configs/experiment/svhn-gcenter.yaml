@@ -4,7 +4,7 @@ defaults:
   - override /trainer: svhn
   - override /model: null
   - override /datamodule: svhn-oe
-  - override /callbacks: cac
+  - override /callbacks: center
   - override /logger: default
   - override /testmodules: svhn
   - override /model/backbone: wideresnet
