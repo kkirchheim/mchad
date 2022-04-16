@@ -71,9 +71,8 @@ class CACLoss(nn.Module):
             tuplet_loss = (-d_other + d_true.unsqueeze(1)).clamp(max=50).exp()  # torch.exp()
             tuplet_loss = torch.log(1 + torch.sum(tuplet_loss, dim=1)).mean()
         else:
-            anchor_loss, tuplet_loss = torch.tensor(0.0, device=distances.device), torch.tensor(
-                0.0, device=distances.device
-            )
+            anchor_loss = torch.tensor(0.0, device=distances.device)
+            tuplet_loss = torch.tensor(0.0, device=distances.device)
 
         return self.lambda_ * anchor_loss, tuplet_loss
 

@@ -135,7 +135,7 @@ class MyBaseDataModule(LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
-            shuffle=False,
+            shuffle=True,
         )
 
     def test_dataloader(self):

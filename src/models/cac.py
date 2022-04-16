@@ -48,13 +48,13 @@ class CAC(LightningModule):
         x, y = batch
         z = self.forward(x)
 
-        distmat = self.cac_loss.calculate_distances(z)
-        anchor_loss, tuplet_loss = self.cac_loss(distmat, y)
+        d = self.cac_loss.calculate_distances(z)
+        anchor_loss, tuplet_loss = self.cac_loss(d, y)
 
         with torch.no_grad():
-            preds = torch.argmin(distmat, dim=1)
+            preds = torch.argmin(d, dim=1)
 
-        return anchor_loss, tuplet_loss, preds, distmat, z
+        return anchor_loss, tuplet_loss, preds, d, z
 
     def training_step(self, batch: Any, batch_idx: int, **kwargs):
         anchor_loss, tuplet_loss, preds, dists, z = self.step(batch)

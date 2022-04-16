@@ -56,7 +56,7 @@ to train on the GPU.
 ### Seed Replicates
 You can run experiments for multiple random seeds in parallel with hydra sweeps:
 ```shell
-python run.py -m experiment=cifar10-mchad trainer.gpus=1 seed="range(1,7)"
+python run.py -m experiment=cifar10-mchad trainer.gpus=1 seed="range(1,21)"
 ```
 We configured the Ray Launcher for parallelization.
 Per default, we run experiments in parallel on 6 GPUs.
@@ -82,9 +82,7 @@ which also accepts command line overrides, such as:
 bash/run-rexperiments.sh dataset_dir=/path/to/your/dataset/directory/
 ```
 
-All datasets will be downloaded automatically to the given `dataset_dir`,
-except for the cleaned 300kk TinyImages which you can get from
-[Hendrycks et al.](https://github.com/hendrycks/outlier-exposure). This has to be placed in ```${dataset_dir}/tiny-images/```.
+All datasets will be downloaded automatically to the given `dataset_dir`.
 
 Results for each run will be written to `csv` files which have to be aggregated.
 You can find the scripts in `notebooks/eval.ipynb`.
@@ -248,7 +246,7 @@ We average all results over 6 seed replicates and several benchmark outlier data
 
 </details>
 
-## Embedding Visualization
+## Representation Visualization
 
 ### MCHAD
 ```sh
@@ -264,15 +262,6 @@ experiment=svhn-gmchad trainer.gpus=1 model.weight_center=10.0 trainer.min_epoch
 ![mchad-embedding](img/gmchad.gif)
 
 
-## Extras
-Apart from the ones used in the paper, this repository also contains code for several other detection methods, including:
-* Softmax Thresholding
-* Energy Based Out-of-Distribution Detection
-* ODIN
-* Monte Carlo Dropout
-* OpenMax
-* Confidence Estimation Branch
-
 
 ## Citation
 
@@ -281,6 +270,3 @@ Apart from the ones used in the paper, this repository also contains code for se
 
 }
 ```
-
-
-[comment]: <> (experiment=cifar10-gmchad trainer.gpus=1 trainer.min_epochs=100 model.weight_center=2.0 dataset_dir=/home/ki/projects/work/mchad/data/ model.n_embedding=2/)

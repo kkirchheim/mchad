@@ -65,14 +65,3 @@ class DistanceThresholding(pl.callbacks.Callback):
         """Called when the test batch ends."""
         if self.use_in_test:
             self._eval_batch(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx, "test")
-
-    def on_train_batch_end(
-        self,
-        trainer: "pl.Trainer",
-        pl_module: "pl.LightningModule",
-        outputs: Any,
-        batch: Any,
-        batch_idx: int,
-        dataloader_idx: int,
-    ) -> None:
-        """Called when the train batch ends."""

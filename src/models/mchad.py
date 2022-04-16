@@ -33,6 +33,7 @@ class MCHAD(LightningModule):
         n_embedding=10,
         margin=1.0,
         radius=0.0,
+        save_embeds=False,
         pretrained=None,
         **kwargs,
     ):
@@ -47,7 +48,6 @@ class MCHAD(LightningModule):
         # loss function components
         self.soft_margin_loss = CenterLoss(n_classes=n_classes, n_dim=n_embedding, radius=radius)
         self.nll_loss = CrossEntropy()
-        # since we use a soft margin loss, the "radius" of the spheres is the margin
         self.regu_loss = CenterRegularizationLoss(margin=margin)
 
         self.weight_oe = weight_oe
@@ -56,6 +56,8 @@ class MCHAD(LightningModule):
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
+
+        self.save_embeds = save_embeds
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -117,15 +119,17 @@ class MCHAD(LightningModule):
         x = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", target, predictions, -dists)
-        save_embeddings(self, dists, z, x, target, tag="train")
 
-        # save centers
-        save_embeddings(
-            self,
-            embedding=self.soft_margin_loss.centers.params.data,
-            targets=np.arange(self.soft_margin_loss.centers.num_classes),
-            tag="centers",
-        )
+        if self.save_embeds:
+            save_embeddings(self, dists, z, x, target, tag="train")
+
+            # save centers
+            save_embeddings(
+                self,
+                embedding=self.soft_margin_loss.centers.params.data,
+                targets=np.arange(self.soft_margin_loss.centers.num_classes),
+                tag="centers",
+            )
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, loss_out, y_hat, dists, z = self.step(batch)
@@ -166,7 +170,6 @@ class MCHAD(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "val", y, predictions, -dists)
-        save_embeddings(self, dists, z, x, y, tag="val")
 
         if is_known(y).any() and is_known(y).sum() > 1500:
             known_dists = dists[is_known(y)].min(dim=1)[0]
@@ -179,13 +182,15 @@ class MCHAD(LightningModule):
                 "Distances/unknown/val", unknown_dists, global_step=self.global_step
             )
 
-        # save centers
-        save_embeddings(
-            self,
-            embedding=self.soft_margin_loss.centers.params.data,
-            targets=np.arange(self.soft_margin_loss.centers.num_classes),
-            tag="centers",
-        )
+        if self.save_embeds:
+            save_embeddings(self, dists, z, x, y, tag="val")
+
+            save_embeddings(
+                self,
+                embedding=self.soft_margin_loss.centers.params.data,
+                targets=np.arange(self.soft_margin_loss.centers.num_classes),
+                tag="centers",
+            )
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, loss_out, y_hat, dists, z = self.step(batch)
@@ -215,7 +220,10 @@ class MCHAD(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "test", targets, prediction, -dists)
-        save_embeddings(self, dists, z, x, targets, tag=f"test-{self._test_epoch}")
+
+        if self.save_embeds:
+            save_embeddings(self, dists, z, x, targets, tag=f"test-{self._test_epoch}")
+
         self._test_epoch += 1
 
     def configure_optimizers(self):
