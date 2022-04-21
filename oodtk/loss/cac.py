@@ -76,13 +76,18 @@ class CACLoss(nn.Module):
 
         return self.lambda_ * anchor_loss, tuplet_loss
 
-    def calculate_distances(self, x):
+    def calculate_distances(self, x, squared=True):
         """
 
         :param x: input points
         :return: distances to class centers
         """
-        return self.centers(x)
+
+        d = self.centers(x)
+        if squared:
+            return d.pow(2)
+
+        return d
 
     @staticmethod
     def score(distance):
