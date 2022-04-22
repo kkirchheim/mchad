@@ -70,6 +70,9 @@ class CenterLoss(nn.Module):
 
     def forward(self, distmat, target) -> torch.Tensor:
         """
+
+        Note: we assume that distances are not squared
+
         :param distmat: distmat of samples with shape (batch_size, n_centers).
         :param target: ground truth labels with shape (batch_size).
         """
@@ -80,8 +83,8 @@ class CenterLoss(nn.Module):
             classes = torch.arange(self.num_classes).long().to(distmat.device)
             target = target.unsqueeze(1).expand(batch_size, self.num_classes)
             mask = target.eq(classes.expand(batch_size, self.num_classes))
-            dist = (distmat - self.radius).relu() * mask.float()
-            loss = dist.clamp(min=1e-12, max=1e12).mean()
+            dist = (distmat.pow(2) - self.radius).relu() * mask.float()
+            loss = dist.clamp(min=1e-12, max=1e12).sum() / batch_size
         else:
             loss = torch.tensor(0.0, device=distmat.device)
 

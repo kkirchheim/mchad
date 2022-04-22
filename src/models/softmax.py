@@ -49,6 +49,14 @@ class SoftMax(LightningModule):
         self.test_acc = torchmetrics.Accuracy(num_classes=n_classes)
         self.test_auroc = torchmetrics.AUROC(num_classes=2)
 
+        if "pretrained_checkpoint" in kwargs:
+            pretrained_checkpoint = kwargs["pretrained_checkpoint"]
+            log.info(f"Loading pretrained weights from {pretrained_checkpoint}")
+            state_dict = torch.load(pretrained_checkpoint, map_location=torch.device("cpu"))
+            del state_dict["fc.weight"]
+            del state_dict["fc.bias"]
+            self.model.load_state_dict(state_dict, strict=False)
+
     def forward(self, x: torch.Tensor):
         return self.model(x)
 

@@ -41,6 +41,14 @@ class CAC(LightningModule):
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
 
+        if "pretrained_checkpoint" in kwargs:
+            pretrained_checkpoint = kwargs["pretrained_checkpoint"]
+            log.info(f"Loading pretrained weights from {pretrained_checkpoint}")
+            state_dict = torch.load(pretrained_checkpoint, map_location=torch.device("cpu"))
+            del state_dict["fc.weight"]
+            del state_dict["fc.bias"]
+            self.model.load_state_dict(state_dict, strict=False)
+
     def forward(self, x: torch.Tensor):
         return self.model(x)
 

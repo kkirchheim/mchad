@@ -1,5 +1,5 @@
-lr_monitor:
-  _target_: pytorch_lightning.callbacks.LearningRateMonitor
+defaults:
+  - default.yaml
 
 distance:
   _target_: src.callbacks.distance.DistanceThresholding

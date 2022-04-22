@@ -116,7 +116,7 @@ def train(config: DictConfig) -> Optional[float]:
         if not config.trainer.get("fast_dev_run"):
             log.info("Starting testing!")
             for test_case_name, module in testmodules.items():
-                result = trainer.test(datamodule=module)[0]
+                result = trainer.test(model=model, datamodule=module, ckpt_path=None)[0]
                 result["test_case_name"] = test_case_name
                 results.append(result)
 
