@@ -3,7 +3,7 @@ import logging
 import pytorch_lightning as pl
 import torch.nn.functional as F
 
-from oodtk.loss import CACLoss
+from pytorch_ood.loss import CACLoss
 from src.utils.logger import TensorBuffer, log_score_histogram
 from src.utils.metrics import log_error_detection_metrics, log_osr_metrics, log_uncertainty_metrics
 

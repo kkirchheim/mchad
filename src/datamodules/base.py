@@ -6,7 +6,7 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import transforms
 
-from oodtk.transforms import TargetMapping
+from pytorch_ood.transforms import TargetMapping
 
 log = logging.getLogger(__name__)
 

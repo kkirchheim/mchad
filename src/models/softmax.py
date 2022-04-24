@@ -6,7 +6,7 @@ import torch
 import torchmetrics
 from pytorch_lightning import LightningModule
 
-from oodtk.utils import is_known
+from pytorch_ood.utils import is_known
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 

@@ -16,7 +16,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers.base import LoggerCollection
 from torch.utils.tensorboard import SummaryWriter
 
-from oodtk.utils import contains_known, contains_unknown, is_known, is_unknown
+from pytorch_ood.utils import contains_known, contains_unknown, is_known, is_unknown
 
 log = logging.getLogger(__name__)
 

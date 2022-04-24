@@ -3,7 +3,7 @@ import logging
 import pytorch_lightning as pl
 import torch.nn.functional as F
 
-from oodtk.odin import odin_preprocessing
+from pytorch_ood.odin import odin_preprocessing
 from src.utils.logger import TensorBuffer
 from src.utils.metrics import log_error_detection_metrics, log_osr_metrics, log_uncertainty_metrics
 

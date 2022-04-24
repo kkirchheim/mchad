@@ -6,8 +6,8 @@ import torch
 from pytorch_lightning import LightningModule
 from torch import nn
 
-from oodtk.loss import CenterLoss, CrossEntropy
-from oodtk.utils import is_known
+from pytorch_ood.loss import CenterLoss, CrossEntropy
+from pytorch_ood.utils import is_known
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
