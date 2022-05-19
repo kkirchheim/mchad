@@ -112,13 +112,11 @@ def train(config: DictConfig) -> Optional[float]:
         # gather results
         results = []
 
-        # Evaluate model on test set after training
-        if not config.trainer.get("fast_dev_run"):
-            log.info("Starting testing!")
-            for test_case_name, module in testmodules.items():
-                result = trainer.test(model=model, datamodule=module, ckpt_path=None)[0]
-                result["test_case_name"] = test_case_name
-                results.append(result)
+        log.info("Starting testing!")
+        for test_case_name, module in testmodules.items():
+            result = trainer.test(model=model, datamodule=module, ckpt_path=None)[0]
+            result["test_case_name"] = test_case_name
+            results.append(result)
 
         # Make sure everything closed properly
         log.info("Finalizing!")

@@ -13,7 +13,7 @@ defaults:
 
 seed: 12345
 deterministic: False # TODO: not all operations are implemented as deterministic
-debug: True
+debug: False
 ignore_warnings: True
 
 model:

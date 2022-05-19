@@ -3,7 +3,7 @@ normalize:
   # https://albumentations.ai/docs/autoalbument/examples/svhn/
   mean: [0.4376821, 0.4437697, 0.47280442]
   std: [0.19803012, 0.20101562, 0.19703614]
-data_dir: ${data_dir}
+data_dir: ${dataset_dir}
 batch_size: 128
 num_workers: 20
 pin_memory: False

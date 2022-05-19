@@ -8,6 +8,8 @@ from torch import nn
 
 from pytorch_ood.loss import CenterLoss, CrossEntropy
 from pytorch_ood.utils import is_known
+
+from src.utils import load_pretrained_checkpoint
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
@@ -51,12 +53,7 @@ class Center(LightningModule):
         self._test_epoch = 0
 
         if "pretrained_checkpoint" in kwargs:
-            pretrained_checkpoint = kwargs["pretrained_checkpoint"]
-            log.info(f"Loading pretrained weights from {pretrained_checkpoint}")
-            state_dict = torch.load(pretrained_checkpoint, map_location=torch.device("cpu"))
-            del state_dict["fc.weight"]
-            del state_dict["fc.bias"]
-            self.model.load_state_dict(state_dict, strict=False)
+            load_pretrained_checkpoint(self.model,  kwargs["pretrained_checkpoint"])
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -69,10 +66,10 @@ class Center(LightningModule):
         logits = self.classifier(z)
         loss_nll = self.criterion(logits, y)
         preds = torch.argmax(logits, dim=1)
-        return loss_center, loss_nll, preds, logits, y, z
+        return loss_center, loss_nll, preds, logits, d, y, z
 
     def training_step(self, batch: Any, batch_idx: int, **kwargs):
-        loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)
+        loss_center, loss_nll, preds, logits, d, targets, embedding = self.step(batch)
 
         x, y = batch
 
@@ -87,6 +84,7 @@ class Center(LightningModule):
             "preds": preds,
             "targets": targets,
             "logits": logits,
+            "dists": d,
             "embedding": embedding.cpu(),
             "points": x.cpu(),
         }
@@ -100,10 +98,10 @@ class Center(LightningModule):
         images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, logits)
-        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
+       #  save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)
+        loss_center, loss_nll, preds, logits, d, targets, embedding = self.step(batch)
 
         loss = self.weight_center * loss_center + loss_nll
 
@@ -118,6 +116,7 @@ class Center(LightningModule):
             "preds": preds,
             "targets": targets,
             "logits": logits,
+            "dists": d,
             "embedding": embedding.cpu(),
             "points": x.cpu(),
         }
@@ -131,10 +130,10 @@ class Center(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "val", targets, preds, logits)
-        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
+       #  save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        loss_center, loss_nll, preds, logits, targets, embedding = self.step(batch)
+        loss_center, loss_nll, preds, logits, d, targets, embedding = self.step(batch)
         loss = self.weight_center * loss_center + loss_nll
 
         x, y = batch
@@ -144,6 +143,7 @@ class Center(LightningModule):
             "preds": preds,
             "targets": targets,
             "logits": logits,
+            "dists": d,
             "embedding": embedding.cpu(),
             "points": x.cpu(),
         }
@@ -157,13 +157,13 @@ class Center(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "test", targets, preds, logits)
-        save_embeddings(
-            self,
-            embedding=embedding,
-            images=images,
-            targets=targets,
-            tag=f"test-{self._test_epoch}",
-        )
+        # save_embeddings(
+        #     self,
+        #     embedding=embedding,
+        #     images=images,
+        #     targets=targets,
+        #     tag=f"test-{self._test_epoch}",
+        # )
         self._test_epoch += 1
 
     def configure_optimizers(self):

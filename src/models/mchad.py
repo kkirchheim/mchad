@@ -10,7 +10,7 @@ from torch import nn
 from pytorch_ood.loss import CenterLoss, CrossEntropy
 from pytorch_ood.utils import is_known, is_unknown
 from src.utils.logger import collect_outputs, get_tensorboard, save_embeddings
-from src.utils.metrics import log_classification_metrics
+from src.utils import log_classification_metrics, load_pretrained_checkpoint
 
 log = logging.getLogger(__name__)
 
@@ -60,12 +60,7 @@ class MCHAD(LightningModule):
         self.save_embeds = save_embeds
 
         if "pretrained_checkpoint" in kwargs:
-            pretrained_checkpoint = kwargs["pretrained_checkpoint"]
-            log.info(f"Loading pretrained weights from {pretrained_checkpoint}")
-            state_dict = torch.load(pretrained_checkpoint, map_location=torch.device("cpu"))
-            del state_dict["fc.weight"]
-            del state_dict["fc.bias"]
-            self.model.load_state_dict(state_dict, strict=False)
+            load_pretrained_checkpoint(self.model,  kwargs["pretrained_checkpoint"])
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -129,7 +124,7 @@ class MCHAD(LightningModule):
         log_classification_metrics(self, "train", target, predictions, -dists)
 
         if self.save_embeds:
-            save_embeddings(self, dists, z, x, target, tag="train")
+           #  save_embeddings(self, dists, z, x, target, tag="train")
 
             # save centers
             save_embeddings(
@@ -191,7 +186,7 @@ class MCHAD(LightningModule):
             )
 
         if self.save_embeds:
-            save_embeddings(self, dists, z, x, y, tag="val")
+           #  save_embeddings(self, dists, z, x, y, tag="val")
 
             save_embeddings(
                 self,
@@ -229,8 +224,8 @@ class MCHAD(LightningModule):
         # log val metrics
         log_classification_metrics(self, "test", targets, prediction, -dists)
 
-        if self.save_embeds:
-            save_embeddings(self, dists, z, x, targets, tag=f"test-{self._test_epoch}")
+        # if self.save_embeds:
+           #  save_embeddings(self, dists, z, x, targets, tag=f"test-{self._test_epoch}")
 
         self._test_epoch += 1
 

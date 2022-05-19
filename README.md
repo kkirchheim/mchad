@@ -76,6 +76,12 @@ tensorboard --logdir logs/
 
 ## Replication
 
+Pre-Trained Weights used for models: 
+```text
+wget https://github.com/hendrycks/pre-training/raw/master/uncertainty/CIFAR/snapshots/imagenet/cifar10_excluded/imagenet_wrn_baseline_epoch_99.pt
+++model.pretrained_checkpoint='${data_dir}/imagenet_wrn_baseline_epoch_99.pt'
+```
+
 Experiments can be replicated by running `bash/run-rexperiments.sh`,
 which also accepts command line overrides, such as:
 ```

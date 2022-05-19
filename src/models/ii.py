@@ -7,6 +7,8 @@ from pytorch_lightning import LightningModule
 from torch.nn import BatchNorm1d
 
 from pytorch_ood.loss import IILoss
+
+from src.utils import load_pretrained_checkpoint
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
@@ -45,12 +47,7 @@ class IIModel(LightningModule):
         self.bn = BatchNorm1d(n_embedding)
 
         if "pretrained_checkpoint" in kwargs:
-            pretrained_checkpoint = kwargs["pretrained_checkpoint"]
-            log.info(f"Loading pretrained weights from {pretrained_checkpoint}")
-            state_dict = torch.load(pretrained_checkpoint, map_location=torch.device("cpu"))
-            del state_dict["fc.weight"]
-            del state_dict["fc.bias"]
-            self.model.load_state_dict(state_dict, strict=False)
+            load_pretrained_checkpoint(self.model,  kwargs["pretrained_checkpoint"])
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -102,7 +99,7 @@ class IIModel(LightningModule):
         images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, predictions, -dists)
-        save_embeddings(self, dists, embedding, images, targets, tag="train")
+       #  save_embeddings(self, dists, embedding, images, targets, tag="train")
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         intra_spread, inter_separation, preds, dists, embedding = self.step(batch)
@@ -131,7 +128,7 @@ class IIModel(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "val", targets, predictions, -dists)
-        save_embeddings(self, dists, embedding, images, targets, tag="val")
+        #  save_embeddings(self, dists, embedding, images, targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         intra_spread, inter_separation, preds, dists, embedding = self.step(batch)
@@ -157,7 +154,7 @@ class IIModel(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "test", targets, predictions, -dists)
-        save_embeddings(self, dists, z, x, targets, tag=f"test-{self._test_epoch}")
+        #  save_embeddings(self, dists, z, x, targets, tag=f"test-{self._test_epoch}")
         self._test_epoch += 1
 
     def configure_optimizers(self):

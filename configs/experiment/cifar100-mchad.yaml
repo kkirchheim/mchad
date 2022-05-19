@@ -13,7 +13,7 @@ defaults:
 
 seed: 12345
 deterministic: True
-debug: True
+debug: False
 ignore_warnings: True
 
 model:
@@ -23,3 +23,4 @@ model:
   margin: 8.0
   weight_center: 0.5
   weight_oe: 0.0
+

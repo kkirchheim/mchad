@@ -1,31 +1,13 @@
 import logging
 from typing import Optional
 
-import numpy as np
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import transforms
 
-from pytorch_ood.transforms import TargetMapping
+from pytorch_ood.utils import ToRGB
 
 log = logging.getLogger(__name__)
-
-
-class ToRBG(object):
-    """
-    Convert Image to RGB, if it is not already.
-    """
-
-    def __call__(self, x):
-        try:
-            return x.convert("RGB")
-        except Exception:
-            # we assume it already is RGB
-            return x
-        # if type(x) is PIL.Image:
-        #     if x.mode != "RGB":
-        #
-        # return x
 
 
 class MyBaseDataModule(LightningDataModule):
@@ -53,7 +35,7 @@ class MyBaseDataModule(LightningDataModule):
 
         # TODO: we could add more data augmentation at this point
         train_trans = [
-            ToRBG(),
+            ToRGB(),
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, padding=4),
             transforms.ToTensor(),
@@ -61,7 +43,7 @@ class MyBaseDataModule(LightningDataModule):
         ]
 
         test_trans = [
-            ToRBG(),
+            ToRGB(),
             transforms.ToTensor(),
             transforms.Resize(size=(height, width)),
         ]
@@ -75,20 +57,6 @@ class MyBaseDataModule(LightningDataModule):
         self.test_trans = transforms.Compose(test_trans)
 
         self.target_transform = None
-
-        if ood_classes_val or ood_classes_test:
-            log.info("OOD classes are set. Sampling Open Set Simulation")
-            # select several classes as unknown.
-            n_leave_out = ood_classes_val + ood_classes_test
-            labels = np.random.permutation(range(self.num_classes))
-            train_in = labels[0 : self.num_classes - n_leave_out]
-            val_out = labels[self.num_classes - n_leave_out : self.num_classes - ood_classes_test]
-            test_out = labels[self.num_classes - ood_classes_test :]
-            self.target_transform = TargetMapping(
-                train_in_classes=train_in,
-                train_out_classes=val_out,
-                test_out_classes=test_out,
-            )
 
         self.data_train: Optional[Dataset] = None
         self.data_val: Optional[Dataset] = None

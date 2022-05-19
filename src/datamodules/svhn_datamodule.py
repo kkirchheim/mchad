@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 from torchvision.datasets import CIFAR10, SVHN
 
-from pytorch_ood.transforms import ToUnknown
+from pytorch_ood.utils import ToUnknown
 
 from .base import MyBaseDataModule
 

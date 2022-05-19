@@ -8,6 +8,19 @@ import rich.tree
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers.wandb import WandbLogger
 from pytorch_lightning.utilities import rank_zero_only
+import torch
+
+
+log = logging.getLogger(__name__)
+
+
+
+def load_pretrained_checkpoint(model, pretrained_checkpoint):
+    log.info(f"Loading pretrained weights from {pretrained_checkpoint}")
+    state_dict = torch.load(pretrained_checkpoint, map_location=torch.device("cpu"))
+    del state_dict["module.fc.weight"]
+    del state_dict["module.fc.bias"]
+    model.load_state_dict(state_dict, strict=False)
 
 
 def get_logger(name=__name__, level=logging.INFO) -> logging.Logger:

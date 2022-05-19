@@ -12,6 +12,7 @@ from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
 from .mchad import CenterRegularizationLoss
+from ..utils import load_pretrained_checkpoint
 
 log = logging.getLogger(__name__)
 
@@ -60,12 +61,7 @@ class GCenter(LightningModule):
         self._test_epoch = 0
 
         if "pretrained_checkpoint" in kwargs:
-            pretrained_checkpoint = kwargs["pretrained_checkpoint"]
-            log.info(f"Loading pretrained weights from {pretrained_checkpoint}")
-            state_dict = torch.load(pretrained_checkpoint, map_location=torch.device("cpu"))
-            del state_dict["fc.weight"]
-            del state_dict["fc.bias"]
-            self.model.load_state_dict(state_dict, strict=False)
+            load_pretrained_checkpoint(self.model,  kwargs["pretrained_checkpoint"])
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -75,15 +71,15 @@ class GCenter(LightningModule):
         known = is_known(y)
         z = self.forward(x)
 
-        distmat = self.soft_margin_loss.calculate_distances(z)
+        d = self.soft_margin_loss.calculate_distances(z)
         logits = self.classifier(z)
-        loss_center = self.soft_margin_loss(distmat, y)
+        loss_center = self.soft_margin_loss(d, y)
         loss_nll = self.nll_loss(logits, y)
-        loss_out = self.regu_loss(distmat, y)
+        loss_out = self.regu_loss(d, y)
 
-        y_hat = torch.argmin(distmat, dim=1)
+        y_hat = torch.argmin(d, dim=1)
 
-        return loss_center, loss_nll, loss_out, y_hat, logits, y, z, distmat
+        return loss_center, loss_nll, loss_out, y_hat, logits, y, z, d
 
     def training_step(self, batch: Any, batch_idx: int, **kwargs):
         if type(batch) is list and type(batch[0]) is list:
@@ -133,7 +129,7 @@ class GCenter(LightningModule):
         images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, logits)
-        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
+       #  save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         (
@@ -179,7 +175,7 @@ class GCenter(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "val", targets, preds, logits)
-        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
+       #  save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         (
@@ -219,13 +215,13 @@ class GCenter(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "test", targets, preds, logits)
-        save_embeddings(
-            self,
-            embedding=embedding,
-            images=images,
-            targets=targets,
-            tag=f"test-{self._test_epoch}",
-        )
+        # save_embeddings(
+        #     self,
+        #     embedding=embedding,
+        #     images=images,
+        #     targets=targets,
+        #     tag=f"test-{self._test_epoch}",
+        # )
         self._test_epoch += 1
 
     def configure_optimizers(self):

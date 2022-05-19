@@ -27,17 +27,6 @@ class CIFAR100DataModule(MyBaseDataModule):
         # self.dims is returned when you call datamodule.size()
         self.dims = (3, 32, 32)
 
-        # # TODO: make configurable
-        # labels = np.random.permutation(range(100))
-        # train_in = labels[:80]
-        # train_out = []
-        # test_out = labels[80:]
-        # self.mapping = TargetMapping(
-        #     train_in_classes=train_in,
-        #     train_out_classes=train_out,
-        #     test_out_classes=test_out,
-        # )
-
     @property
     def num_classes(self) -> int:
         return 100

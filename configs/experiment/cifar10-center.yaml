@@ -13,6 +13,8 @@ defaults:
 
 seed: 12345
 deterministic: True
+debug: False
+
 
 model:
   _target_: src.models.Center

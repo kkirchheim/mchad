@@ -1,6 +1,6 @@
 _target_: src.datamodules.MultiDatamodule
 module1:
-  _target_: src.datamodules.CIFAR100DataModule
+  _target_: src.datamodules.CIFAR10DataModule
   normalize:
     # https://github.com/wetliu/energy_ood/blob/master/CIFAR/train.py
     mean:
@@ -16,9 +16,10 @@ module1:
 module2:
   _target_: src.datamodules.SingleOODDataModule
   dataset:
-    _target_: pytorch_ood.dataset.img.TinyImages300k
-    root:  ${dataset_dir}
-    download: True
+    _target_: pytorch_ood.dataset.img.TinyImages
+    datafile:  ${dataset_dir}/tiny-images/tiny_images.bin
+    cifar_index_file: ${dataset_dir}/tiny-images/80mn_cifar_idxs.txt
+    exclude_cifar: True
   normalize:
     # https://github.com/wetliu/energy_ood/blob/master/CIFAR/train.py
     mean:

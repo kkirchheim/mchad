@@ -12,7 +12,7 @@ test_vs_textures:
     train: False
     download: True
   data_out:
-    _target_: src.datamodules.datasets.textures.Textures
+    _target_: pytorch_ood.dataset.img.Textures
     root: ${data_dir}
     download: True
 test_vs_uniformnoise:
@@ -27,8 +27,8 @@ test_vs_uniformnoise:
     train: False
     download: True
   data_out:
-    _target_: src.datamodules.datasets.noise.UniformNoise
-    samples: 10000
+    _target_: pytorch_ood.dataset.img.UniformNoise
+    length: 10000
     size: [32, 32, 3]
 test_vs_gaussiannoise:
   _target_: src.datamodules.ood_datamodule.OODDataModule
@@ -42,8 +42,8 @@ test_vs_gaussiannoise:
     train: False
     download: True
   data_out:
-    _target_: src.datamodules.datasets.noise.GaussianNoise
-    samples: 10000
+    _target_: pytorch_ood.dataset.img.GaussianNoise
+    length: 10000
     size: [32, 32, 3]
 
 test_vs_tinycrop:
@@ -58,7 +58,7 @@ test_vs_tinycrop:
     train: False
     download: True
   data_out:
-    _target_: src.datamodules.datasets.odin.TinyImageNetCrop
+    _target_: pytorch_ood.dataset.img.TinyImageNetCrop
     root: ${data_dir}
     download: True
 test_vs_tinyresize:
@@ -73,7 +73,7 @@ test_vs_tinyresize:
     train: False
     download: True
   data_out:
-    _target_: src.datamodules.datasets.odin.TinyImageNetResize
+    _target_: pytorch_ood.dataset.img.TinyImageNetResize
     root: ${data_dir}
     download: True
 test_vs_lsuncrop:
@@ -88,7 +88,7 @@ test_vs_lsuncrop:
     train: False
     download: True
   data_out:
-    _target_: src.datamodules.datasets.odin.LSUNCrop
+    _target_: pytorch_ood.dataset.img.LSUNCrop
     root: ${data_dir}
     download: True
 test_vs_lsunresize:
@@ -103,6 +103,6 @@ test_vs_lsunresize:
     train: False
     download: True
   data_out:
-    _target_: src.datamodules.datasets.odin.LSUNResize
+    _target_: pytorch_ood.dataset.img.LSUNResize
     root: ${data_dir}
     download: True

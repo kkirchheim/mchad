@@ -14,9 +14,10 @@ module1:
 module2:
   _target_: src.datamodules.SingleOODDataModule
   dataset:
-    _target_: pytorch_ood.dataset.img.TinyImages300k
-    root:  ${dataset_dir}
-    download: True
+    _target_: pytorch_ood.dataset.img.TinyImages
+    datafile:  ${dataset_dir}/tiny-images/tiny_images.bin
+    cifar_index_file: ${dataset_dir}/tiny-images/80mn_cifar_idxs.txt
+    exclude_cifar: True
   normalize:
     # https://albumentations.ai/docs/autoalbument/examples/svhn/
     mean: [0.4376821, 0.4437697, 0.47280442]

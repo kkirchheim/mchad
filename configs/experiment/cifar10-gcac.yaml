@@ -14,7 +14,7 @@ defaults:
 seed: 12345
 # TODO: not all operations (scatter_add_cuda_kernel) are implemented as deterministic
 deterministic: False
-debug: True
+debug: False
 ignore_warnings: True
 
 model:

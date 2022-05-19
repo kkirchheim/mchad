@@ -7,6 +7,8 @@ import torchmetrics
 from pytorch_lightning import LightningModule
 
 from pytorch_ood.utils import is_known
+
+from src.utils import load_pretrained_checkpoint
 from src.utils.logger import collect_outputs, save_embeddings
 from src.utils.metrics import log_classification_metrics
 
@@ -50,12 +52,7 @@ class SoftMax(LightningModule):
         self.test_auroc = torchmetrics.AUROC(num_classes=2)
 
         if "pretrained_checkpoint" in kwargs:
-            pretrained_checkpoint = kwargs["pretrained_checkpoint"]
-            log.info(f"Loading pretrained weights from {pretrained_checkpoint}")
-            state_dict = torch.load(pretrained_checkpoint, map_location=torch.device("cpu"))
-            del state_dict["fc.weight"]
-            del state_dict["fc.bias"]
-            self.model.load_state_dict(state_dict, strict=False)
+            load_pretrained_checkpoint(self.model,  kwargs["pretrained_checkpoint"])
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -109,7 +106,7 @@ class SoftMax(LightningModule):
         images = collect_outputs(outputs, "points")
 
         log_classification_metrics(self, "train", targets, preds, logits)
-        save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="train")
+       #  save_embeddings(self, embedding=embedding, images=images, targets=targets, tag="train")
         try:
             log.info(f"ACC Metric: {self.train_acc.compute()}")
             log.info(f"AUROC Metric: {self.train_auroc.compute()}")
@@ -149,7 +146,7 @@ class SoftMax(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "val", targets, predictions, logits)
-        save_embeddings(self, embedding=z, images=x, targets=targets, tag="val")
+       #  save_embeddings(self, embedding=z, images=x, targets=targets, tag="val")
 
         try:
             log.info(f"ACC Metric: {self.val_acc.compute()}")
@@ -187,9 +184,9 @@ class SoftMax(LightningModule):
 
         # log val metrics
         log_classification_metrics(self, "test", targets, predictions, logits)
-        save_embeddings(
-            self, embedding=z, images=x, targets=targets, tag=f"test-{self._test_epoch}"
-        )
+        # save_embeddings(
+        #     self, embedding=z, images=x, targets=targets, tag=f"test-{self._test_epoch}"
+        # )
 
         self._test_epoch += 1
 

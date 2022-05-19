@@ -2,6 +2,7 @@
 
 # specify here default training configuration
 defaults:
+  - _self_
   - trainer: cifar10
   - model: default
   - model/backbone: wideresnet
