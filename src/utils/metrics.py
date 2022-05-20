@@ -56,4 +56,3 @@ def log_classification_metrics(model: pl.LightningModule, stage, y, y_hat, logit
             model.log(f"Loss/{stage}", np.nan)
 
     return
-

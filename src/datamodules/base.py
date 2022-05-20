@@ -50,7 +50,9 @@ class MyBaseDataModule(LightningDataModule):
 
         if normalize:
             log.info("Adding normalization")
-            train_trans.append(transforms.Normalize(normalize["mean"], normalize["std"]))
+            train_trans.append(
+                transforms.Normalize(normalize["mean"], normalize["std"])
+            )
             test_trans.append(transforms.Normalize(normalize["mean"], normalize["std"]))
 
         self.train_trans = transforms.Compose(train_trans)

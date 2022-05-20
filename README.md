@@ -2,17 +2,25 @@
 
 # Multi-Class Hypersphere Anomaly Detection
 
-<a href="https://pytorch.org/get-started/locally/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-ee4c2c?logo=pytorch&logoColor=white"></a>
-<a href="https://pytorchlightning.ai/"><img alt="Lightning" src="https://img.shields.io/badge/-Lightning-792ee5?logo=pytorchlightning&logoColor=white"></a>
-<a href="https://hydra.cc/"><img alt="Config: Hydra" src="https://img.shields.io/badge/Config-Hydra-89b8cd"></a>
-<a href="https://github.com/ashleve/lightning-hydra-template"><img alt="Template" src="https://img.shields.io/badge/-Lightning--Hydra--Template-017F2F?style=flat&logo=github&labelColor=gray"></a><br>
+<a href="https://pytorch.org/get-started/locally/">
+    <img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-ee4c2c?logo=pytorch&logoColor=white">
+</a>
+<a href="https://pytorchlightning.ai/">
+    <img alt="Lightning" src="https://img.shields.io/badge/-Lightning-792ee5?logo=pytorchlightning&logoColor=white">
+</a>
+<a href="https://hydra.cc/">
+    <img alt="Config: Hydra" src="https://img.shields.io/badge/Config-Hydra-89b8cd">
+</a>
+<a href="https://github.com/ashleve/lightning-hydra-template">
+    <img alt="Template" src="https://img.shields.io/badge/-Lightning--Hydra--Template-017F2F?style=flat&logo=github&labelColor=gray">
+</a>
+<a href="https://github.com/ashleve/lightning-hydra-template">
+    <img alt="Template" src="http://img.shields.io/badge/ICPR-2022-4b44ce.svg">
+</a>
 
-<a href="https://github.com/ashleve/lightning-hydra-template"><img alt="Template" src="http://img.shields.io/badge/ICPR-2022-4b44ce.svg"></a><br>
 
-
-
-This Repository contains the source code for the paper _Multi-Class Hypersphere Anomaly Detection_.
-
+This Repository contains the source code for the paper _Multi-Class Hypersphere Anomaly Detection_ as
+accepted at ICPR 2022.
 
 
 ![mchad](img/mchad.png)
@@ -22,7 +30,8 @@ This Repository contains the source code for the paper _Multi-Class Hypersphere 
 ## Setup
 This repository is a fork of the
 [lightning-hydra-template](https://github.com/ashleve/lightning-hydra-template), so you might
-want to read their excellent instructions on how to use this software stack.
+want to read their excellent instructions on how to use this software stack. 
+Most of the implemented methods and datasets are taken from [pytorch-ood](https://gitlab.com/kkirchheim/pytorch-ood).
 
 First, create a python virtual environment, install dependencies, and
 add the `src`  directory to your python path.
@@ -56,10 +65,10 @@ to train on the GPU.
 ### Seed Replicates
 You can run experiments for multiple random seeds in parallel with hydra sweeps:
 ```shell
-python run.py -m experiment=cifar10-mchad trainer.gpus=1 seed="range(1,21)"
+python run.py -m experiment=cifar10-mchad trainer.gpus=1 seed="range(1,22)"
 ```
 We configured the Ray Launcher for parallelization.
-Per default, we run experiments in parallel on 6 GPUs.
+Per default, we run experiments in parallel on 21 GPUs.
 You might have to adjust `config/hydra/launcher/ray.yaml`.
 
 <details>

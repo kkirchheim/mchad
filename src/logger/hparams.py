@@ -13,7 +13,9 @@ class YamlLogger(plog.LightningLoggerBase):
     Logs hyper parameters to a yaml file
     """
 
-    def __init__(self, filename="config.yaml", name="yaml", version=None, prefix="", save_dir="."):
+    def __init__(
+        self, filename="config.yaml", name="yaml", version=None, prefix="", save_dir="."
+    ):
         super(YamlLogger, self).__init__()
         self.filename = filename
         self._version = version

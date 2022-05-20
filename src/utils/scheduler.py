@@ -7,4 +7,6 @@ class CosineSchedulerWrapper(CosineAnnealingWarmRestarts):
     """
 
     def __init__(self, epochs, batches_per_epoch, **kwargs):
-        super(CosineSchedulerWrapper, self).__init__(T_0=epochs * batches_per_epoch, **kwargs)
+        super(CosineSchedulerWrapper, self).__init__(
+            T_0=epochs * batches_per_epoch, **kwargs
+        )

@@ -2,15 +2,19 @@ import logging
 from typing import Any, List
 
 import hydra
-import numpy as np
 import torch
 from pytorch_lightning import LightningModule
 from torch import nn
 
 from pytorch_ood.loss import CenterLoss, CrossEntropy
 from pytorch_ood.utils import is_known, is_unknown
-from src.utils.logger import collect_outputs, get_tensorboard, save_embeddings
-from src.utils import log_classification_metrics, load_pretrained_checkpoint
+from src.utils import (
+    log_classification_metrics,
+    load_pretrained_checkpoint,
+    outputs_detach_cpu,
+    collect_outputs,
+    get_tensorboard
+)
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +22,8 @@ log = logging.getLogger(__name__)
 class MCHAD(LightningModule):
     """
     Multi Class Hypersphere Anomaly Detection model.
-    Uses a radius of 0 for the hyperspheres.
+
+    Uses a radius of 0 for the hyperspheres by default.
     """
 
     def __init__(
@@ -46,7 +51,9 @@ class MCHAD(LightningModule):
         self.model = hydra.utils.instantiate(backbone)
 
         # loss function components
-        self.soft_margin_loss = CenterLoss(n_classes=n_classes, n_dim=n_embedding, radius=radius)
+        self.soft_margin_loss = CenterLoss(
+            n_classes=n_classes, n_dim=n_embedding, radius=radius
+        )
         self.nll_loss = CrossEntropy()
         self.regu_loss = CenterRegularizationLoss(margin=margin)
 
@@ -60,7 +67,7 @@ class MCHAD(LightningModule):
         self.save_embeds = save_embeds
 
         if "pretrained_checkpoint" in kwargs:
-            load_pretrained_checkpoint(self.model,  kwargs["pretrained_checkpoint"])
+            load_pretrained_checkpoint(self.model, kwargs["pretrained_checkpoint"])
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -104,35 +111,21 @@ class MCHAD(LightningModule):
             unknown_dists = dists[is_unknown(y)].min(dim=1)[0].mean().item()
             self.log("Distance/unknown/train", value=unknown_dists)
 
-        return {
-            "loss": loss,
-            "preds": y_hat,
-            "targets": y,
-            "dists": dists,
-            "embedding": z.cpu(),
-            "points": x.cpu(),
-        }
+        return outputs_detach_cpu(
+            {
+                "loss": loss,
+                "preds": y_hat,
+                "targets": y,
+                "dists": dists,
+                "embedding": z,
+            }
+        )
 
     def training_epoch_end(self, outputs: List[Any]):
-        # `outputs` is a list of dicts returned from `training_step()`
         target = collect_outputs(outputs, "targets")
         predictions = collect_outputs(outputs, "preds")
         dists = collect_outputs(outputs, "dists")
-        z = collect_outputs(outputs, "embedding")
-        x = collect_outputs(outputs, "points")
-
         log_classification_metrics(self, "train", target, predictions, -dists)
-
-        if self.save_embeds:
-           #  save_embeddings(self, dists, z, x, target, tag="train")
-
-            # save centers
-            save_embeddings(
-                self,
-                embedding=self.soft_margin_loss.centers.params.data,
-                targets=np.arange(self.soft_margin_loss.centers.num_classes),
-                tag="centers",
-            )
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, loss_out, y_hat, dists, z = self.step(batch)
@@ -155,21 +148,20 @@ class MCHAD(LightningModule):
             unknown_dists = dists[is_unknown(y)].min(dim=1)[0].mean().item()
             self.log("Distance/unknown/val", value=unknown_dists)
 
-        return {
-            "loss": loss,
-            "preds": y_hat,
-            "targets": y,
-            "dists": dists,
-            "embedding": z.cpu(),
-            "points": x.cpu(),
-        }
+        return outputs_detach_cpu(
+            {
+                "loss": loss,
+                "preds": y_hat,
+                "targets": y,
+                "dists": dists,
+                "embedding": z,
+            }
+        )
 
     def validation_epoch_end(self, outputs: List[Any]):
         y = collect_outputs(outputs, "targets")
         predictions = collect_outputs(outputs, "preds")
         dists = collect_outputs(outputs, "dists")
-        z = collect_outputs(outputs, "embedding")
-        x = collect_outputs(outputs, "points")
 
         # log val metrics
         log_classification_metrics(self, "val", y, predictions, -dists)
@@ -185,16 +177,6 @@ class MCHAD(LightningModule):
                 "Distances/unknown/val", unknown_dists, global_step=self.global_step
             )
 
-        if self.save_embeds:
-           #  save_embeddings(self, dists, z, x, y, tag="val")
-
-            save_embeddings(
-                self,
-                embedding=self.soft_margin_loss.centers.params.data,
-                targets=np.arange(self.soft_margin_loss.centers.num_classes),
-                tag="centers",
-            )
-
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         loss_center, loss_nll, loss_out, y_hat, dists, z = self.step(batch)
         loss = (
@@ -205,34 +187,30 @@ class MCHAD(LightningModule):
 
         x, y = batch
 
-        return {
-            "loss": loss,
-            "preds": y_hat,
-            "targets": y,
-            "dists": dists,
-            "embedding": z.cpu(),
-            "points": x.cpu(),
-        }
+        return outputs_detach_cpu(
+            {
+                "loss": loss,
+                "preds": y_hat,
+                "targets": y,
+                "dists": dists,
+                "embedding": z,
+            }
+        )
 
     def test_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
         prediction = collect_outputs(outputs, "preds")
         dists = collect_outputs(outputs, "dists")
-        z = collect_outputs(outputs, "embedding")
-        x = collect_outputs(outputs, "points")
-
-        # log val metrics
         log_classification_metrics(self, "test", targets, prediction, -dists)
-
-        # if self.save_embeds:
-           #  save_embeddings(self, dists, z, x, targets, tag=f"test-{self._test_epoch}")
 
         self._test_epoch += 1
 
     def configure_optimizers(self):
         opti = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters())
         sched = {
-            "scheduler": hydra.utils.instantiate(self.hparams.scheduler.scheduler, optimizer=opti),
+            "scheduler": hydra.utils.instantiate(
+                self.hparams.scheduler.scheduler, optimizer=opti
+            ),
             "interval": self.hparams.scheduler.interval,
             "frequency": self.hparams.scheduler.frequency,
         }
@@ -264,6 +242,7 @@ class CenterRegularizationLoss(nn.Module):
 
         if unknown.any():
             d = (self.margin.pow(2) - distmat[unknown].pow(2)).relu().sum(dim=1)
+            # apply reduction
             return d.sum()
 
         return torch.tensor(0.0, device=distmat.device)

@@ -8,8 +8,7 @@ from torch.nn import BatchNorm1d
 
 from pytorch_ood.loss import IILoss
 
-from src.utils import load_pretrained_checkpoint
-from src.utils.logger import collect_outputs, save_embeddings
+from src.utils import load_pretrained_checkpoint, collect_outputs, outputs_detach_cpu
 from src.utils.metrics import log_classification_metrics
 
 log = logging.getLogger(__name__)
@@ -47,7 +46,7 @@ class IIModel(LightningModule):
         self.bn = BatchNorm1d(n_embedding)
 
         if "pretrained_checkpoint" in kwargs:
-            load_pretrained_checkpoint(self.model,  kwargs["pretrained_checkpoint"])
+            load_pretrained_checkpoint(self.model, kwargs["pretrained_checkpoint"])
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -79,27 +78,23 @@ class IIModel(LightningModule):
         loss = intra_spread + self.weight_sep * inter_separation
 
         self.log(name="Loss/intra_spread/train", value=intra_spread, on_step=True)
-        self.log(name="Loss/inter_separation/train", value=inter_separation, on_step=True)
+        self.log(
+            name="Loss/inter_separation/train", value=inter_separation, on_step=True
+        )
 
-        return {
+        return outputs_detach_cpu({
             "loss": loss,
             "preds": preds,
             "targets": y,
             "dists": dists,
-            "embedding": z.cpu(),
-            "points": x.cpu(),
-        }
+            "embedding": z,
+        })
 
     def training_epoch_end(self, outputs: List[Any]):
-        # `outputs` is a list of dicts returned from `training_step()`
         targets = collect_outputs(outputs, "targets")
         predictions = collect_outputs(outputs, "preds")
         dists = collect_outputs(outputs, "dists")
-        embedding = collect_outputs(outputs, "embedding")
-        images = collect_outputs(outputs, "points")
-
         log_classification_metrics(self, "train", targets, predictions, -dists)
-       #  save_embeddings(self, dists, embedding, images, targets, tag="train")
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         intra_spread, inter_separation, preds, dists, embedding = self.step(batch)
@@ -110,25 +105,19 @@ class IIModel(LightningModule):
         self.log(name="Loss/inter_separation/val", value=inter_separation)
 
         x, y = batch
-        return {
+        return outputs_detach_cpu({
             "loss": loss,
             "preds": preds,
             "targets": y,
             "dists": dists,
-            "embedding": embedding.cpu(),
-            "points": x.cpu(),
-        }
+            "embedding": embedding,
+        })
 
     def validation_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
         predictions = collect_outputs(outputs, "preds")
         dists = collect_outputs(outputs, "dists")
-        embedding = collect_outputs(outputs, "embedding")
-        images = collect_outputs(outputs, "points")
-
-        # log val metrics
         log_classification_metrics(self, "val", targets, predictions, -dists)
-        #  save_embeddings(self, dists, embedding, images, targets, tag="val")
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
         intra_spread, inter_separation, preds, dists, embedding = self.step(batch)
@@ -136,31 +125,27 @@ class IIModel(LightningModule):
         loss = intra_spread + self.weight_sep * inter_separation
 
         x, y = batch
-        return {
+        return outputs_detach_cpu({
             "loss": loss,
             "preds": preds,
             "targets": y,
             "dists": dists,
-            "embedding": embedding.cpu(),
-            "points": x.cpu(),
-        }
+            "embedding": embedding,
+        })
 
     def test_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
         predictions = collect_outputs(outputs, "preds")
         dists = collect_outputs(outputs, "dists")
-        z = collect_outputs(outputs, "embedding")
-        x = collect_outputs(outputs, "points")
-
-        # log val metrics
         log_classification_metrics(self, "test", targets, predictions, -dists)
-        #  save_embeddings(self, dists, z, x, targets, tag=f"test-{self._test_epoch}")
         self._test_epoch += 1
 
     def configure_optimizers(self):
         opti = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters())
         sched = {
-            "scheduler": hydra.utils.instantiate(self.hparams.scheduler.scheduler, optimizer=opti),
+            "scheduler": hydra.utils.instantiate(
+                self.hparams.scheduler.scheduler, optimizer=opti
+            ),
             "interval": self.hparams.scheduler.interval,
             "frequency": self.hparams.scheduler.frequency,
         }
