@@ -6,7 +6,7 @@ import torch
 from pytorch_lightning import LightningModule
 from torch import nn
 
-from pytorch_ood.loss import CenterLoss, CrossEntropy
+from pytorch_ood.loss import CenterLoss, CrossEntropyLoss
 from pytorch_ood.utils import is_known, is_unknown
 from src.utils import (
     log_classification_metrics,
@@ -50,11 +50,11 @@ class MCHAD(LightningModule):
 
         self.model = hydra.utils.instantiate(backbone)
 
-        # loss function components
+        # loss function components: center loss, cross-entropy and regularization
         self.soft_margin_loss = CenterLoss(
             n_classes=n_classes, n_dim=n_embedding, radius=radius
         )
-        self.nll_loss = CrossEntropy()
+        self.nll_loss = CrossEntropyLoss()
         self.regu_loss = CenterRegularizationLoss(margin=margin)
 
         self.weight_oe = weight_oe

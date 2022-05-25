@@ -7,7 +7,7 @@ import torchmetrics
 from pytorch_lightning import LightningModule
 
 from pytorch_ood.utils import is_known
-from pytorch_ood.loss import CrossEntropy
+from pytorch_ood.loss import CrossEntropyLoss
 
 from src.utils import load_pretrained_checkpoint, collect_outputs, outputs_detach_cpu
 from src.utils.metrics import log_classification_metrics
@@ -39,7 +39,7 @@ class SoftMax(LightningModule):
         self.model = hydra.utils.instantiate(backbone)
 
         # loss function
-        self.criterion = CrossEntropy()
+        self.criterion = CrossEntropyLoss()
 
         # count the number of calls to test_epoch_end
         self._test_epoch = 0

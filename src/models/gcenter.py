@@ -4,7 +4,7 @@ from typing import Any, List
 import hydra
 import torch
 from pytorch_lightning import LightningModule
-from pytorch_ood.loss import CenterLoss, CrossEntropy
+from pytorch_ood.loss import CenterLoss, CrossEntropyLoss
 from pytorch_ood.utils import is_known
 from torch import nn
 
@@ -47,7 +47,7 @@ class GCenter(LightningModule):
 
         # loss function components
         self.soft_margin_loss = CenterLoss(n_classes=n_classes, n_dim=n_embedding)
-        self.nll_loss = CrossEntropy()
+        self.nll_loss = CrossEntropyLoss()
         # since we use a soft margin loss, the "radius" of the spheres is the margin
         self.regu_loss = CenterRegularizationLoss(margin=margin)
 

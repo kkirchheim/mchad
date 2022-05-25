@@ -10,5 +10,7 @@ do
   do
     echo "run ${method} ${ds}"
     python run.py -m experiment="${ds}-${method}" seed="range(1,22)" trainer.gpus=1 dataset_dir="/run/media/ki/INTENSO/datasets/" ++model.pretrained_checkpoint='${data_dir}/imagenet_wrn_baseline_epoch_99.pt' hydra.sweep.dir="${log_dir}/${ds}/${method}/" ${@}
+    # kill remaining jobs
+    kill  $(ps -ae -o pid,args | grep "ray::_run_job()" | cut -f 1 -d " ")
   done
 done

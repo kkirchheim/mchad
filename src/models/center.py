@@ -6,7 +6,7 @@ import torch
 from pytorch_lightning import LightningModule
 from torch import nn
 
-from pytorch_ood.loss import CenterLoss, CrossEntropy
+from pytorch_ood.loss import CenterLoss, CrossEntropyLoss
 
 from src.utils import (
     load_pretrained_checkpoint,
@@ -48,7 +48,7 @@ class Center(LightningModule):
         self.classifier = nn.Linear(n_embedding, n_classes)
 
         # loss function
-        self.criterion = CrossEntropy()
+        self.criterion = CrossEntropyLoss()
 
         self.center_loss = CenterLoss(n_classes=n_classes, n_dim=n_embedding)
         self.weight_center = weight_center
