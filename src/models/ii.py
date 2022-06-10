@@ -4,11 +4,10 @@ from typing import Any, List
 import hydra
 import torch
 from pytorch_lightning import LightningModule
+from pytorch_ood.loss import IILoss
 from torch.nn import BatchNorm1d
 
-from pytorch_ood.loss import IILoss
-
-from src.utils import load_pretrained_checkpoint, collect_outputs, outputs_detach_cpu
+from src.utils import collect_outputs, load_pretrained_checkpoint, outputs_detach_cpu
 from src.utils.metrics import log_classification_metrics
 
 log = logging.getLogger(__name__)
@@ -38,7 +37,7 @@ class IIModel(LightningModule):
         self.save_hyperparameters()
 
         self.model = hydra.utils.instantiate(backbone)
-        self.ii_loss = IILoss(n_classes=n_classes, n_embedding=n_embedding)
+        self.ii_loss = IILoss(n_classes=n_classes, n_embedding=n_embedding, alpha=weight_sep)
         self.weight_sep = weight_sep
         # count the number of calls to test_epoch_end
         self._test_epoch = 0
@@ -63,32 +62,28 @@ class IIModel(LightningModule):
         # do additional batch norm layer to embedding
         z = self.bn(z)
 
-        intra_spread, inter_separation = self.ii_loss(z, y)
+        loss = self.ii_loss(z, y)
         dists = self.ii_loss.calculate_distances(z)
         preds = torch.argmin(dists, dim=1)
 
-        return intra_spread, inter_separation, preds, dists, z
+        return loss, preds, dists, z
 
     def training_step(self, batch: Any, batch_idx: int, **kwargs):
-        intra_spread, inter_separation, preds, dists, z = self.step(batch)
+        loss, preds, dists, z = self.step(batch)
 
         x, y = batch
 
-        # NOTE: weighting is not in the original paper, but it collapses immediately without it
-        loss = intra_spread + self.weight_sep * inter_separation
+        self.log(name="Loss/train", value=loss, on_step=True)
 
-        self.log(name="Loss/intra_spread/train", value=intra_spread, on_step=True)
-        self.log(
-            name="Loss/inter_separation/train", value=inter_separation, on_step=True
+        return outputs_detach_cpu(
+            {
+                "loss": loss,
+                "preds": preds,
+                "targets": y,
+                "dists": dists,
+                "embedding": z,
+            }
         )
-
-        return outputs_detach_cpu({
-            "loss": loss,
-            "preds": preds,
-            "targets": y,
-            "dists": dists,
-            "embedding": z,
-        })
 
     def training_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
@@ -97,21 +92,20 @@ class IIModel(LightningModule):
         log_classification_metrics(self, "train", targets, predictions, -dists)
 
     def validation_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        intra_spread, inter_separation, preds, dists, embedding = self.step(batch)
+        loss, preds, dists, embedding = self.step(batch)
 
-        loss = intra_spread + self.weight_sep * inter_separation
-
-        self.log(name="Loss/intra_spread/val", value=intra_spread)
-        self.log(name="Loss/inter_separation/val", value=inter_separation)
+        self.log(name="Loss/val", value=loss)
 
         x, y = batch
-        return outputs_detach_cpu({
-            "loss": loss,
-            "preds": preds,
-            "targets": y,
-            "dists": dists,
-            "embedding": embedding,
-        })
+        return outputs_detach_cpu(
+            {
+                "loss": loss,
+                "preds": preds,
+                "targets": y,
+                "dists": dists,
+                "embedding": embedding,
+            }
+        )
 
     def validation_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
@@ -120,18 +114,18 @@ class IIModel(LightningModule):
         log_classification_metrics(self, "val", targets, predictions, -dists)
 
     def test_step(self, batch: Any, batch_idx: int, *args, **kwargs):
-        intra_spread, inter_separation, preds, dists, embedding = self.step(batch)
-
-        loss = intra_spread + self.weight_sep * inter_separation
+        loss, preds, dists, embedding = self.step(batch)
 
         x, y = batch
-        return outputs_detach_cpu({
-            "loss": loss,
-            "preds": preds,
-            "targets": y,
-            "dists": dists,
-            "embedding": embedding,
-        })
+        return outputs_detach_cpu(
+            {
+                "loss": loss,
+                "preds": preds,
+                "targets": y,
+                "dists": dists,
+                "embedding": embedding,
+            }
+        )
 
     def test_epoch_end(self, outputs: List[Any]):
         targets = collect_outputs(outputs, "targets")
@@ -143,9 +137,7 @@ class IIModel(LightningModule):
     def configure_optimizers(self):
         opti = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters())
         sched = {
-            "scheduler": hydra.utils.instantiate(
-                self.hparams.scheduler.scheduler, optimizer=opti
-            ),
+            "scheduler": hydra.utils.instantiate(self.hparams.scheduler.scheduler, optimizer=opti),
             "interval": self.hparams.scheduler.interval,
             "frequency": self.hparams.scheduler.frequency,
         }

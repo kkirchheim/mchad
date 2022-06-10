@@ -4,17 +4,36 @@ from typing import Any, List
 import hydra
 import torch
 from pytorch_lightning import LightningModule
-from torch import nn
-
 from pytorch_ood.loss import CenterLoss, CrossEntropyLoss
 from pytorch_ood.utils import is_known, is_unknown
+from torch import nn
+
 from src.utils import (
-    log_classification_metrics,
-    load_pretrained_checkpoint,
-    outputs_detach_cpu,
     collect_outputs,
-    get_tensorboard
+    get_tensorboard,
+    load_pretrained_checkpoint,
+    log_classification_metrics,
+    outputs_detach_cpu,
 )
+
+
+class UnNormalize(object):
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, tensor):
+        """
+        Args:
+            tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
+        Returns:
+            Tensor: Normalized image.
+        """
+        for t, m, s in zip(tensor, self.mean, self.std):
+            t.mul_(s).add_(m)
+            # The normalize code -> t.sub_(m).div_(s)
+        return tensor
+
 
 log = logging.getLogger(__name__)
 
@@ -51,9 +70,7 @@ class MCHAD(LightningModule):
         self.model = hydra.utils.instantiate(backbone)
 
         # loss function components: center loss, cross-entropy and regularization
-        self.soft_margin_loss = CenterLoss(
-            n_classes=n_classes, n_dim=n_embedding, radius=radius
-        )
+        self.soft_margin_loss = CenterLoss(n_classes=n_classes, n_dim=n_embedding, radius=radius)
         self.nll_loss = CrossEntropyLoss()
         self.regu_loss = CenterRegularizationLoss(margin=margin)
 
@@ -148,6 +165,22 @@ class MCHAD(LightningModule):
             unknown_dists = dists[is_unknown(y)].min(dim=1)[0].mean().item()
             self.log("Distance/unknown/val", value=unknown_dists)
 
+        if is_unknown(y).any():
+            from src.utils import get_tensorboard
+
+            std = torch.tensor(
+                [0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215]
+            )
+            mean = torch.tensor(
+                [0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666]
+            )
+            n = UnNormalize(std=std, mean=mean)
+            x_ = torch.stack([n(t) for t in x])
+            # model.weight_oe=0.000025 model.weight_center=0.5
+            get_tensorboard(self).add_images(
+                tag="abc", img_tensor=x_, global_step=self.global_step
+            )
+
         return outputs_detach_cpu(
             {
                 "loss": loss,
@@ -208,9 +241,7 @@ class MCHAD(LightningModule):
     def configure_optimizers(self):
         opti = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters())
         sched = {
-            "scheduler": hydra.utils.instantiate(
-                self.hparams.scheduler.scheduler, optimizer=opti
-            ),
+            "scheduler": hydra.utils.instantiate(self.hparams.scheduler.scheduler, optimizer=opti),
             "interval": self.hparams.scheduler.interval,
             "frequency": self.hparams.scheduler.frequency,
         }

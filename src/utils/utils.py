@@ -1,19 +1,17 @@
 import logging
+import time
 import warnings
-from typing import List, Sequence, Any
+from typing import Any, List, Sequence
 
+import numpy as np
 import pytorch_lightning as pl
 import rich.syntax
 import rich.tree
-from omegaconf import DictConfig, OmegaConf
-from pytorch_lightning.loggers import TensorBoardLogger, LoggerCollection
-from pytorch_lightning.utilities import rank_zero_only
 import torch
-import numpy as np
-import time
-
-
-from pytorch_ood.utils import is_known, is_unknown, contains_unknown, contains_known
+from omegaconf import DictConfig, OmegaConf
+from pytorch_lightning.loggers import LoggerCollection, TensorBoardLogger
+from pytorch_lightning.utilities import rank_zero_only
+from pytorch_ood.utils import contains_known, contains_unknown, is_known, is_unknown
 from tensorboardX import SummaryWriter
 
 log = logging.getLogger(__name__)
@@ -35,7 +33,12 @@ def load_pretrained_checkpoint(model, pretrained_checkpoint):
     state_dict = torch.load(pretrained_checkpoint, map_location=torch.device("cpu"))
     del state_dict["module.fc.weight"]
     del state_dict["module.fc.bias"]
-    model.load_state_dict(state_dict, strict=False)
+
+    new_state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
+    new_state_dict["fc.weight"] = model.fc.weight.data
+    new_state_dict["fc.bias"] = model.fc.bias.data
+
+    model.load_state_dict(new_state_dict)
 
 
 def get_logger(name=__name__, level=logging.INFO) -> logging.Logger:
@@ -90,9 +93,7 @@ def extras(config: DictConfig) -> None:
 
     # force debugger friendly configuration if <config.trainer.fast_dev_run=True>
     if config.trainer.get("fast_dev_run"):
-        log.info(
-            "Forcing debugger friendly configuration! <config.trainer.fast_dev_run=True>"
-        )
+        log.info("Forcing debugger friendly configuration! <config.trainer.fast_dev_run=True>")
         # Debuggers don't like GPUs or multiprocessing
         if config.trainer.get("gpus"):
             config.trainer.gpus = 0
@@ -104,9 +105,7 @@ def extras(config: DictConfig) -> None:
     # force multi-gpu friendly configuration if <config.trainer.accelerator=ddp>
     accelerator = config.trainer.get("accelerator")
     if accelerator in ["ddp", "ddp_spawn", "dp", "ddp2"]:
-        log.info(
-            f"Forcing ddp friendly configuration! <config.trainer.accelerator={accelerator}>"
-        )
+        log.info(f"Forcing ddp friendly configuration! <config.trainer.accelerator={accelerator}>")
         if config.datamodule.get("num_workers"):
             config.datamodule.num_workers = 0
         if config.datamodule.get("pin_memory"):
@@ -311,9 +310,7 @@ def log_score_histogram(model, stage, score, y, y_hat, method=None):
                 )
 
         if contains_unknown(y) and not np.isnan(score).any():
-            writer.add_histogram(
-                tag=f"{prefix}/unknown", values=score[unknown], global_step=epoch
-            )
+            writer.add_histogram(tag=f"{prefix}/unknown", values=score[unknown], global_step=epoch)
 
 
 class ContextGuard:

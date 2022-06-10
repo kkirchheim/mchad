@@ -25,5 +25,5 @@ model:
   margin: 3.1
   magnitude: 1.0
   weight_center: 1.0
-  weight_oe: 0.0005
+  weight_oe: 0.00001 # TODO!!
   weight_ce: 1.5

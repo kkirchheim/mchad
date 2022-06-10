@@ -23,4 +23,4 @@ model:
   margin: 8.0
   weight_center: 0.5
   weight_oe: 0.0
-
+  weight_ce: 1.5
