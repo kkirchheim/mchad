@@ -4,8 +4,8 @@ from typing import Any, List
 import hydra
 import torch
 from pytorch_lightning import LightningModule
-
 from pytorch_ood.loss import CACLoss
+
 from src.utils import collect_outputs, load_pretrained_checkpoint, outputs_detach_cpu
 from src.utils.metrics import log_classification_metrics
 
@@ -41,11 +41,10 @@ class GCAC(LightningModule):
         self.model = hydra.utils.instantiate(backbone)
 
         # Note: we will apply weights later
-        self.cac_loss = CACLoss(n_classes=n_classes, magnitude=magnitude, alpha=1.0)
+        self.cac_loss = CACLoss(n_classes=n_classes, magnitude=magnitude, alpha=weight_center)
 
         self.weight_oe = weight_oe
         self.weight_ce = weight_ce  # weight for the touplet loss
-        self.weight_center = weight_center
 
         self.regu_loss = CenterRegularizationLoss(margin=margin)
 
@@ -106,8 +105,8 @@ class GCAC(LightningModule):
 
         loss = self.weight_ce * loss_in + self.weight_oe * loss_out
 
-        self.log(name="Loss/cac/val", value=loss_in, on_step=True)
-        self.log(name="Loss/cac/regu/val", value=loss_out, on_step=True)
+        self.log(name="Loss/cac/val", value=loss_in)
+        self.log(name="Loss/cac/regu/val", value=loss_out)
 
         x, y = batch
 
@@ -152,9 +151,7 @@ class GCAC(LightningModule):
     def configure_optimizers(self):
         opti = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters())
         sched = {
-            "scheduler": hydra.utils.instantiate(
-                self.hparams.scheduler.scheduler, optimizer=opti
-            ),
+            "scheduler": hydra.utils.instantiate(self.hparams.scheduler.scheduler, optimizer=opti),
             "interval": self.hparams.scheduler.interval,
             "frequency": self.hparams.scheduler.frequency,
         }

@@ -22,5 +22,5 @@ model:
   n_embedding: 64
   margin: 8.0
   weight_center: 1.0
-  weight_oe: 0.0005
+  weight_oe: 0.000005
   weight_ce: 1.5

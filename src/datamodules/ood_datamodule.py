@@ -84,8 +84,14 @@ class SingleOODDataModule(MyBaseDataModule):
         self.data_train, self.data_val = random_split(dataset, [n1, n2])
 
         # ############################################
-        # from pytorch_ood.dataset.img import LSUNResize
-        # self.data_val = LSUNResize(root="data", download=True, transform=self.test_trans, target_transform=transforms.Lambda(return_neg_1k))
+        from pytorch_ood.dataset.img import LSUNCrop
+
+        self.data_val = LSUNCrop(
+            root="data",
+            download=True,
+            transform=self.test_trans,
+            target_transform=transforms.Lambda(return_neg_1k),
+        )
         # ############################################
 
         # DIRTY FIX

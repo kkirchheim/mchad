@@ -20,7 +20,7 @@ model:
   _target_: src.models.GCAC
   n_classes: 10
   n_embedding: ${model.n_classes}
-  margin: 3.1
+  margin: 1.0
   magnitude: 1.0
   weight_center: 1.0
   weight_oe: 0.0005

@@ -7,5 +7,5 @@ data_dir: ${dataset_dir}
 batch_size: 128
 num_workers: 20
 pin_memory: False
-data_order_seed: null
-data_split_seed: null
+data_order_seed: 1234
+data_split_seed: 1234

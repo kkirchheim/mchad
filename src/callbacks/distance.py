@@ -1,7 +1,7 @@
 import logging
 
 import pytorch_lightning as pl
-from pytorch_ood.utils import OODMetrics
+from pytorch_ood.utils import OODMetrics, is_known, is_unknown
 
 from src.utils import log_metric
 
@@ -18,6 +18,7 @@ class DistanceThresholding(pl.callbacks.Callback):
     def __init__(self, use_in_val=True, use_in_test=True, **kwargs):
         self.use_in_val = use_in_val
         self.use_in_test = use_in_test
+        self.log_dists = True
         self.metrics = {
             "val": OODMetrics(),
             "test": OODMetrics(),
@@ -30,13 +31,32 @@ class DistanceThresholding(pl.callbacks.Callback):
             metrics = self.metrics[stage].compute()
 
             for key, value in metrics.items():
-                log_metric(
-                    pl_module, value, "OOD", stage, key, method=DistanceThresholding.NAME
-                )
+                log_metric(pl_module, value, "OOD", stage, key, method=DistanceThresholding.NAME)
         except ValueError as e:
-            log.warning(f"Can not calculate metrics")
+            log.warning("Can not calculate metrics")
         finally:
             self.metrics[stage].reset()
+
+    def on_train_batch_end(
+        self,
+        trainer: "pl.Trainer",
+        pl_module: "pl.LightningModule",
+        outputs,
+        batch,
+        batch_idx: int,
+        dataloader_idx: int,
+    ) -> None:
+        """Called when the train batch ends."""
+        if self.log_dists:
+            dists = outputs["dists"]
+            y = outputs["targets"]
+
+            if is_known(y).any():
+                known_dists = dists[is_known(y)].min(dim=1)[0].mean().item()
+                self.log("Distance/known/val", value=known_dists)
+            if is_unknown(y).any():
+                unknown_dists = dists[is_unknown(y)].min(dim=1)[0].mean().item()
+                self.log("Distance/unknown/val", value=unknown_dists)
 
     def on_validation_epoch_end(self, trainer, pl_module, **kwargs):
         """Called when the val epoch ends."""
@@ -56,9 +76,17 @@ class DistanceThresholding(pl.callbacks.Callback):
             x, y = batch
             self.metrics["val"].update(outputs["dists"].min(dim=1).values, y)
 
-    def on_test_batch_end(
-        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
-    ):
+            if self.log_dists:
+                dists = outputs["dists"]
+
+                if is_known(y).any():
+                    known_dists = dists[is_known(y)].min(dim=1)[0].mean().item()
+                    self.log("Distance/known/val", value=known_dists)
+                if is_unknown(y).any():
+                    unknown_dists = dists[is_unknown(y)].min(dim=1)[0].mean().item()
+                    self.log("Distance/unknown/val", value=unknown_dists)
+
+    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         """Called when the test batch ends."""
         if self.use_in_test:
             x, y = batch

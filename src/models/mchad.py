@@ -16,25 +16,6 @@ from src.utils import (
     outputs_detach_cpu,
 )
 
-
-class UnNormalize(object):
-    def __init__(self, mean, std):
-        self.mean = mean
-        self.std = std
-
-    def __call__(self, tensor):
-        """
-        Args:
-            tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
-        Returns:
-            Tensor: Normalized image.
-        """
-        for t, m, s in zip(tensor, self.mean, self.std):
-            t.mul_(s).add_(m)
-            # The normalize code -> t.sub_(m).div_(s)
-        return tensor
-
-
 log = logging.getLogger(__name__)
 
 
@@ -157,29 +138,6 @@ class MCHAD(LightningModule):
         self.log(name="Loss/loss_nll/val", value=loss_nll)
         self.log(name="Loss/loss_out/val", value=loss_out)
         self.log(name="Loss/loss/val", value=loss)
-
-        if is_known(y).any():
-            known_dists = dists[is_known(y)].min(dim=1)[0].mean().item()
-            self.log("Distance/known/val", value=known_dists)
-        if is_unknown(y).any():
-            unknown_dists = dists[is_unknown(y)].min(dim=1)[0].mean().item()
-            self.log("Distance/unknown/val", value=unknown_dists)
-
-        if is_unknown(y).any():
-            from src.utils import get_tensorboard
-
-            std = torch.tensor(
-                [0.24705882352941176470, 0.24352941176470588235, 0.26156862745098039215]
-            )
-            mean = torch.tensor(
-                [0.49137254901960784313, 0.48235294117647058823, 0.44666666666666666666]
-            )
-            n = UnNormalize(std=std, mean=mean)
-            x_ = torch.stack([n(t) for t in x])
-            # model.weight_oe=0.000025 model.weight_center=0.5
-            get_tensorboard(self).add_images(
-                tag="abc", img_tensor=x_, global_step=self.global_step
-            )
 
         return outputs_detach_cpu(
             {

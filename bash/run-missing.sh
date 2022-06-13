@@ -1,7 +1,7 @@
 #!/bin/bash
 # Run all experiments
-datasets=("svhn" "cifar10" "cifar100")
-methods=("gmchad gcenter gcac")
+datasets=("cifar10" "svhn")
+methods=("gmchad" "gcenter" "gcac" "mchad" "center" "cac" "ii")
 log_dir="logs/multiruns/complete/$(date +"%D-%T")/"
 
 for ds in ${datasets[*]}

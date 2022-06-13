@@ -11,13 +11,13 @@ module1:
   batch_size: 128
   num_workers: 20
   pin_memory: False
-  data_order_seed: null
-  data_split_seed: null
+  data_order_seed: 1234
+  data_split_seed: 1234
 module2:
   _target_: src.datamodules.SingleOODDataModule
   dataset:
     _target_: pytorch_ood.dataset.img.TinyImages300k
-    root:  ${dataset_dir}
+    root: ${dataset_dir}
     download: True
   normalize:
     # https://github.com/wetliu/energy_ood/blob/master/CIFAR/train.py
@@ -28,5 +28,5 @@ module2:
   batch_size: 256
   num_workers: 20
   pin_memory: False
-  data_order_seed: null
-  data_split_seed: null
+  data_order_seed: 1234
+  data_split_seed: 1234
