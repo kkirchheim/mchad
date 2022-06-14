@@ -20,5 +20,5 @@ model:
   _target_: src.models.CAC
   n_embedding: ${model.n_classes}
   weight_center: 2.0
-  magnitude: 2.0
+  magnitude: 10.0
   n_classes: 100

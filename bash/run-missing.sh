@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run all experiments
-datasets=("cifar10" "svhn")
+datasets=("cifar100")
 methods=("gmchad" "gcenter" "gcac" "mchad" "center" "cac" "ii")
 log_dir="logs/multiruns/complete/$(date +"%D-%T")/"
 

@@ -53,10 +53,10 @@ class DistanceThresholding(pl.callbacks.Callback):
 
             if is_known(y).any():
                 known_dists = dists[is_known(y)].min(dim=1)[0].mean().item()
-                self.log("Distance/known/val", value=known_dists)
+                self.log("Distance/known/train", value=known_dists)
             if is_unknown(y).any():
                 unknown_dists = dists[is_unknown(y)].min(dim=1)[0].mean().item()
-                self.log("Distance/unknown/val", value=unknown_dists)
+                self.log("Distance/unknown/train", value=unknown_dists)
 
     def on_validation_epoch_end(self, trainer, pl_module, **kwargs):
         """Called when the val epoch ends."""
