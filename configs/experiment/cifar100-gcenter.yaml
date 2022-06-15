@@ -20,7 +20,8 @@ model:
   _target_: src.models.GCenter
   n_classes: 100
   n_embedding: 64
-  margin: 8.0
-  weight_center: 1.0
-  weight_oe: 0.000005
+  # is squared distance
+  margin: 64.0
+  weight_center: 2.0
+  weight_oe: 0.00001
   weight_ce: 1.5

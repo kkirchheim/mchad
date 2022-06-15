@@ -20,4 +20,4 @@ model:
   _target_: src.models.Center
   n_classes: 100
   n_embedding: 64
-  weight_center: 0.5 # default, as given in the paper
+  weight_center: 2.0
