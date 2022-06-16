@@ -30,17 +30,16 @@ accepted at ICPR 2022.
 ## Setup
 This repository is a fork of the
 [lightning-hydra-template](https://github.com/ashleve/lightning-hydra-template), so you might
-want to read their excellent instructions on how to use this software stack. 
+want to read their excellent instructions on how to use this software stack.
 Most of the implemented methods and datasets are taken from [pytorch-ood](https://gitlab.com/kkirchheim/pytorch-ood).
 
-First, create a python virtual environment, install dependencies, and
-add the `src`  directory to your python path.
-
 ```
-python -m virtualenv venv
-source venv/bin/activate
-pip install -r requirements.txt
-export PYTHONPATH="src/"
+# setup environment
+conda env create --name mchad -f environment.yaml
+conda activate mchad
+
+# these would lead to conflicts or have been installed later
+pip install aiohttp==3.7 async-timeout==3.0.1 pytorch-ood=0.0.7 tensorboardX==2.5.1
 ```
 
 ## Usage
@@ -71,24 +70,11 @@ We configured the Ray Launcher for parallelization.
 Per default, we run experiments in parallel on 21 GPUs.
 You might have to adjust `config/hydra/launcher/ray.yaml`.
 
-<details>
-<summary><b>Live training metrics, embeddings etc. can be visualized with Tensorboard.</b></summary>
-
-```shell
-tensorboard --logdir logs/
-```
-
-![mchad](img/tb.png)
-
-</details>
-
-
 ## Replication
 
-Pre-Trained Weights used for models: 
-```text
-wget https://github.com/hendrycks/pre-training/raw/master/uncertainty/CIFAR/snapshots/imagenet/cifar10_excluded/imagenet_wrn_baseline_epoch_99.pt
-++model.pretrained_checkpoint='${data_dir}/imagenet_wrn_baseline_epoch_99.pt'
+Download Pre-Trained Weights used for models:
+```sh
+wget -P data "https://github.com/hendrycks/pre-training/raw/master/uncertainty/CIFAR/snapshots/imagenet/cifar10_excluded/imagenet_wrn_baseline_epoch_99.pt"
 ```
 
 Experiments can be replicated by running `bash/run-rexperiments.sh`,
@@ -111,9 +97,7 @@ bash/run-ablation.sh dataset_dir=/path/to/your/dataset/directory/
 
 ## Results
 
-We average all results over 6 seed replicates and several benchmark outlier datasets.
-
-
+We average all results over 21 seed replicates and several benchmark outlier datasets.
 
 <table border="1" class="dataframe">
   <thead>
@@ -476,6 +460,7 @@ experiment=svhn-gmchad trainer.gpus=1 model.weight_center=10.0 trainer.min_epoch
 
 
 ## Citation
+If you use this code, please consider citing us:
 
 ```text
 @article{kirchheim2022multi,
