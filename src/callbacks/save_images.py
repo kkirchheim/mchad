@@ -10,7 +10,9 @@ log = logging.getLogger(__name__)
 
 
 class SaveImages(pl.callbacks.Callback):
-    """ """
+    """
+    Save some images, used for sanity checking
+    """
 
     def __init__(self, use_in_val=False, use_in_test=True, **kwargs):
         self.use_in_val = use_in_val
@@ -41,7 +43,6 @@ class SaveImages(pl.callbacks.Callback):
     def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         """Called when the test batch ends."""
         if self.use_in_test:
-            x, y = batch
             self.save_images(pl_module, batch, "val")
 
 

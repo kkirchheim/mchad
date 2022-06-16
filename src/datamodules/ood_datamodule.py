@@ -78,21 +78,10 @@ class SingleOODDataModule(MyBaseDataModule):
         super(SingleOODDataModule, self).setup(stage)
         dataset = hydra.utils.instantiate(self.dataset_ood)
 
-        # TODO:
+        # TODO: make configurable
         n1 = int(0.9 * len(dataset))
         n2 = len(dataset) - n1
         self.data_train, self.data_val = random_split(dataset, [n1, n2])
-
-        # ############################################
-        from pytorch_ood.dataset.img import LSUNCrop
-
-        self.data_val = LSUNCrop(
-            root="data",
-            download=True,
-            transform=self.test_trans,
-            target_transform=transforms.Lambda(return_neg_1k),
-        )
-        # ############################################
 
         # DIRTY FIX
         dataset.transform = self.test_trans

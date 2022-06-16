@@ -114,6 +114,7 @@ bash/run-ablation.sh dataset_dir=/path/to/your/dataset/directory/
 We average all results over 6 seed replicates and several benchmark outlier datasets.
 
 
+
 <table border="1" class="dataframe">
   <thead>
     <tr>
@@ -129,15 +130,15 @@ We average all results over 6 seed replicates and several benchmark outlier data
       <th></th>
       <th></th>
       <th>mean</th>
-      <th>std</th>
+      <th>sem</th>
       <th>mean</th>
-      <th>std</th>
+      <th>sem</th>
       <th>mean</th>
-      <th>std</th>
+      <th>sem</th>
       <th>mean</th>
-      <th>std</th>
+      <th>sem</th>
       <th>mean</th>
-      <th>std</th>
+      <th>sem</th>
     </tr>
     <tr>
       <th>Dataset</th>
@@ -158,443 +159,278 @@ We average all results over 6 seed replicates and several benchmark outlier data
     <tr>
       <th rowspan="7" valign="top">CIFAR10</th>
       <th>CAC</th>
-      <td>93.55</td>
-      <td>0.14</td>
-      <td>80.35</td>
-      <td>8.75</td>
-      <td>75.88</td>
-      <td>12.08</td>
-      <td>79.07</td>
-      <td>8.83</td>
-      <td>61.18</td>
-      <td>16.99</td>
+      <td>95.17</td>
+      <td>0.01</td>
+      <td>92.81</td>
+      <td>0.38</td>
+      <td>88.14</td>
+      <td>0.77</td>
+      <td>94.84</td>
+      <td>0.23</td>
+      <td>18.87</td>
+      <td>0.76</td>
     </tr>
     <tr>
       <th>Center</th>
-      <td>93.32</td>
-      <td>0.20</td>
-      <td>87.43</td>
-      <td>8.35</td>
-      <td>87.71</td>
-      <td>9.26</td>
-      <td>83.93</td>
-      <td>10.26</td>
-      <td>56.98</td>
-      <td>17.78</td>
-    </tr>
-    <tr>
-      <th>G-CAC</th>
-      <td>93.34</td>
-      <td>0.20</td>
-      <td>84.49</td>
-      <td>17.61</td>
-      <td>86.09</td>
-      <td>16.97</td>
-      <td>80.41</td>
-      <td>20.31</td>
-      <td>47.81</td>
-      <td>38.62</td>
-    </tr>
-    <tr>
-      <th>G-Center</th>
-      <td>93.00</td>
-      <td>0.18</td>
-      <td>82.47</td>
-      <td>18.09</td>
-      <td>83.12</td>
-      <td>15.02</td>
-      <td>80.00</td>
-      <td>15.04</td>
-      <td>61.39</td>
-      <td>20.59</td>
-    </tr>
-    <tr>
-      <th>G-MCHAD</th>
-      <td>93.41</td>
+      <td>94.45</td>
+      <td>0.01</td>
+      <td>92.59</td>
       <td>0.25</td>
-      <td>87.95</td>
-      <td>6.90</td>
-      <td>87.27</td>
-      <td>9.74</td>
-      <td>84.17</td>
-      <td>8.23</td>
-      <td>53.92</td>
-      <td>23.00</td>
-    </tr>
-    <tr>
-      <th>II</th>
-      <td>53.49</td>
-      <td>4.18</td>
-      <td>45.34</td>
-      <td>13.04</td>
-      <td>53.08</td>
-      <td>12.82</td>
-      <td>43.86</td>
-      <td>5.96</td>
-      <td>97.76</td>
-      <td>3.22</td>
-    </tr>
-    <tr>
-      <th>MCHAD</th>
-      <td>93.69</td>
-      <td>0.21</td>
-      <td>89.11</td>
-      <td>6.08</td>
-      <td>90.53</td>
-      <td>5.11</td>
-      <td>85.18</td>
-      <td>9.31</td>
-      <td>52.35</td>
-      <td>23.20</td>
-    </tr>
-    <tr>
-      <th rowspan="6" valign="top">CIFAR100</th>
-      <th>CAC</th>
-      <td>71.04</td>
-      <td>0.39</td>
-      <td>72.07</td>
-      <td>12.81</td>
-      <td>74.37</td>
-      <td>13.37</td>
-      <td>67.36</td>
-      <td>13.31</td>
-      <td>79.96</td>
-      <td>21.68</td>
+      <td>88.93</td>
+      <td>0.36</td>
+      <td>92.66</td>
+      <td>0.38</td>
+      <td>29.75</td>
+      <td>1.58</td>
     </tr>
     <tr>
       <th>G-CAC</th>
-      <td>70.10</td>
-      <td>0.47</td>
-      <td>50.54</td>
-      <td>31.25</td>
-      <td>58.26</td>
-      <td>22.45</td>
-      <td>55.34</td>
-      <td>20.41</td>
-      <td>83.62</td>
-      <td>21.89</td>
+      <td>94.98</td>
+      <td>0.03</td>
+      <td>93.33</td>
+      <td>0.59</td>
+      <td>90.33</td>
+      <td>0.72</td>
+      <td>94.78</td>
+      <td>0.42</td>
+      <td>19.95</td>
+      <td>1.18</td>
     </tr>
     <tr>
       <th>G-Center</th>
-      <td>69.78</td>
-      <td>0.45</td>
-      <td>65.87</td>
-      <td>23.31</td>
-      <td>72.84</td>
-      <td>16.16</td>
-      <td>64.04</td>
-      <td>17.92</td>
-      <td>80.71</td>
-      <td>15.82</td>
+      <td>94.28</td>
+      <td>0.02</td>
+      <td>93.29</td>
+      <td>0.51</td>
+      <td>89.27</td>
+      <td>0.83</td>
+      <td>94.77</td>
+      <td>0.40</td>
+      <td>19.19</td>
+      <td>1.19</td>
     </tr>
     <tr>
       <th>G-MCHAD</th>
-      <td>69.95</td>
-      <td>0.43</td>
-      <td>72.37</td>
-      <td>14.10</td>
-      <td>79.01</td>
-      <td>10.75</td>
-      <td>65.04</td>
-      <td>14.03</td>
-      <td>82.10</td>
-      <td>26.19</td>
-    </tr>
-    <tr>
-      <th>II</th>
-      <td>7.82</td>
-      <td>0.64</td>
-      <td>49.42</td>
-      <td>11.24</td>
-      <td>53.98</td>
-      <td>11.37</td>
-      <td>47.43</td>
-      <td>8.00</td>
-      <td>95.46</td>
-      <td>3.99</td>
-    </tr>
-    <tr>
-      <th>MCHAD</th>
-      <td>70.51</td>
-      <td>0.31</td>
-      <td>76.80</td>
-      <td>12.20</td>
-      <td>82.38</td>
-      <td>9.29</td>
-      <td>69.56</td>
-      <td>14.24</td>
-      <td>76.64</td>
-      <td>31.39</td>
-    </tr>
-    <tr>
-      <th rowspan="6" valign="top">SVHN</th>
-      <th>CAC</th>
+      <td>94.69</td>
+      <td>0.01</td>
       <td>96.69</td>
-      <td>0.08</td>
-      <td>91.10</td>
-      <td>3.09</td>
-      <td>92.45</td>
-      <td>3.18</td>
-      <td>84.18</td>
-      <td>4.62</td>
-      <td>19.66</td>
-      <td>6.55</td>
-    </tr>
-    <tr>
-      <th>Center</th>
-      <td>94.93</td>
       <td>0.19</td>
-      <td>97.54</td>
-      <td>1.25</td>
-      <td>99.13</td>
-      <td>0.44</td>
-      <td>92.78</td>
-      <td>4.08</td>
-      <td>15.34</td>
-      <td>8.58</td>
-    </tr>
-    <tr>
-      <th>G-CAC</th>
-      <td>96.42</td>
-      <td>0.14</td>
-      <td>97.51</td>
-      <td>4.10</td>
-      <td>97.87</td>
-      <td>3.56</td>
-      <td>95.47</td>
-      <td>7.48</td>
-      <td>7.41</td>
-      <td>12.03</td>
-    </tr>
-    <tr>
-      <th>G-Center</th>
-      <td>96.36</td>
+      <td>94.31</td>
+      <td>0.40</td>
+      <td>97.57</td>
       <td>0.13</td>
-      <td>94.75</td>
-      <td>2.31</td>
-      <td>96.95</td>
-      <td>1.79</td>
-      <td>86.68</td>
-      <td>5.56</td>
-      <td>24.58</td>
-      <td>7.87</td>
-    </tr>
-    <tr>
-      <th>G-MCHAD</th>
-      <td>96.33</td>
-      <td>0.13</td>
-      <td>98.32</td>
-      <td>1.26</td>
-      <td>99.42</td>
-      <td>0.48</td>
-      <td>93.94</td>
-      <td>4.63</td>
-      <td>8.61</td>
-      <td>8.25</td>
+      <td>10.27</td>
+      <td>0.52</td>
     </tr>
     <tr>
       <th>II</th>
-      <td>16.33</td>
-      <td>7.75</td>
-      <td>50.96</td>
-      <td>17.96</td>
-      <td>74.92</td>
-      <td>11.15</td>
-      <td>30.83</td>
-      <td>15.43</td>
-      <td>90.98</td>
-      <td>15.15</td>
-    </tr>
-  </tbody>
-</table>
-
-
-<table border="1" class="dataframe">
-  <thead>
-    <tr>
-      <th></th>
-      <th></th>
-      <th colspan="2" halign="left">Accuracy</th>
-      <th colspan="2" halign="left">AUROC</th>
-      <th colspan="2" halign="left">AUPR-IN</th>
-      <th colspan="2" halign="left">AUPR-OUT</th>
-      <th colspan="2" halign="left">FPR95</th>
+      <td>28.41</td>
+      <td>0.19</td>
+      <td>60.83</td>
+      <td>1.41</td>
+      <td>59.18</td>
+      <td>1.34</td>
+      <td>63.24</td>
+      <td>1.47</td>
+      <td>78.18</td>
+      <td>2.41</td>
     </tr>
     <tr>
-      <th></th>
-      <th></th>
-      <th>mean</th>
-      <th>std</th>
-      <th>mean</th>
-      <th>std</th>
-      <th>mean</th>
-      <th>std</th>
-      <th>mean</th>
-      <th>std</th>
-      <th>mean</th>
-      <th>std</th>
+      <th>MCHAD</th>
+      <td>94.83</td>
+      <td>0.02</td>
+      <td>94.15</td>
+      <td>0.32</td>
+      <td>89.61</td>
+      <td>0.65</td>
+      <td>95.80</td>
+      <td>0.22</td>
+      <td>16.18</td>
+      <td>0.80</td>
     </tr>
     <tr>
-      <th>Dataset</th>
-      <th>Model</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
+      <th rowspan="7" valign="top">CIFAR100</th>
+      <th>CAC</th>
+      <td>75.67</td>
+      <td>0.02</td>
+      <td>73.85</td>
+      <td>1.12</td>
+      <td>68.82</td>
+      <td>1.24</td>
+      <td>77.90</td>
+      <td>0.97</td>
+      <td>59.91</td>
+      <td>1.92</td>
     </tr>
-  </thead>
-  <tbody>
     <tr>
-      <th rowspan="4" valign="top">CIFAR10</th>
+      <th>Center</th>
+      <td>76.59</td>
+      <td>0.02</td>
+      <td>74.26</td>
+      <td>1.41</td>
+      <td>69.04</td>
+      <td>1.37</td>
+      <td>78.16</td>
+      <td>1.25</td>
+      <td>57.64</td>
+      <td>2.32</td>
+    </tr>
+    <tr>
       <th>G-CAC</th>
-      <td>93.34</td>
-      <td>0.20</td>
-      <td>84.49</td>
-      <td>17.61</td>
-      <td>86.09</td>
-      <td>16.97</td>
-      <td>80.41</td>
-      <td>20.31</td>
-      <td>47.81</td>
-      <td>38.62</td>
+      <td>69.99</td>
+      <td>0.94</td>
+      <td>68.67</td>
+      <td>1.34</td>
+      <td>64.88</td>
+      <td>1.32</td>
+      <td>73.20</td>
+      <td>1.11</td>
+      <td>66.95</td>
+      <td>1.85</td>
     </tr>
     <tr>
       <th>G-Center</th>
-      <td>93.00</td>
+      <td>67.94</td>
+      <td>0.11</td>
+      <td>69.38</td>
+      <td>2.35</td>
+      <td>75.34</td>
+      <td>1.70</td>
+      <td>69.52</td>
+      <td>2.04</td>
+      <td>66.75</td>
+      <td>3.40</td>
+    </tr>
+    <tr>
+      <th>G-MCHAD</th>
+      <td>77.14</td>
+      <td>0.02</td>
+      <td>83.96</td>
+      <td>0.97</td>
+      <td>80.56</td>
+      <td>1.03</td>
+      <td>86.27</td>
+      <td>0.90</td>
+      <td>45.17</td>
+      <td>2.38</td>
+    </tr>
+    <tr>
+      <th>II</th>
+      <td>5.90</td>
+      <td>0.07</td>
+      <td>51.05</td>
+      <td>1.46</td>
+      <td>50.56</td>
+      <td>1.11</td>
+      <td>55.79</td>
+      <td>1.27</td>
+      <td>86.72</td>
+      <td>1.88</td>
+    </tr>
+    <tr>
+      <th>MCHAD</th>
+      <td>77.52</td>
+      <td>0.02</td>
+      <td>79.88</td>
+      <td>0.97</td>
+      <td>72.59</td>
+      <td>1.11</td>
+      <td>84.18</td>
+      <td>0.81</td>
+      <td>48.83</td>
+      <td>2.05</td>
+    </tr>
+    <tr>
+      <th rowspan="7" valign="top">SVHN</th>
+      <th>CAC</th>
+      <td>94.56</td>
+      <td>0.03</td>
+      <td>95.97</td>
       <td>0.18</td>
-      <td>82.47</td>
-      <td>18.09</td>
-      <td>83.12</td>
-      <td>15.02</td>
-      <td>80.00</td>
-      <td>15.04</td>
-      <td>61.39</td>
-      <td>20.59</td>
-    </tr>
-    <tr>
-      <th>G-MCHAD</th>
-      <td>93.41</td>
-      <td>0.25</td>
-      <td>87.95</td>
-      <td>6.90</td>
-      <td>87.27</td>
-      <td>9.74</td>
-      <td>84.17</td>
-      <td>8.23</td>
-      <td>53.92</td>
-      <td>23.00</td>
-    </tr>
-    <tr>
-      <th>MCHAD</th>
-      <td>93.69</td>
-      <td>0.21</td>
-      <td>89.11</td>
-      <td>6.08</td>
-      <td>90.53</td>
-      <td>5.11</td>
-      <td>85.18</td>
-      <td>9.31</td>
-      <td>52.35</td>
-      <td>23.20</td>
-    </tr>
-    <tr>
-      <th rowspan="4" valign="top">CIFAR100</th>
-      <th>G-CAC</th>
-      <td>70.10</td>
-      <td>0.47</td>
-      <td>50.54</td>
-      <td>31.25</td>
-      <td>58.26</td>
-      <td>22.45</td>
-      <td>55.34</td>
-      <td>20.41</td>
-      <td>83.62</td>
-      <td>21.89</td>
-    </tr>
-    <tr>
-      <th>G-Center</th>
-      <td>69.78</td>
-      <td>0.45</td>
-      <td>65.87</td>
-      <td>23.31</td>
-      <td>72.84</td>
-      <td>16.16</td>
-      <td>64.04</td>
-      <td>17.92</td>
-      <td>80.71</td>
-      <td>15.82</td>
-    </tr>
-    <tr>
-      <th>G-MCHAD</th>
-      <td>69.95</td>
-      <td>0.43</td>
-      <td>72.37</td>
-      <td>14.10</td>
-      <td>79.01</td>
-      <td>10.75</td>
-      <td>65.04</td>
-      <td>14.03</td>
-      <td>82.10</td>
-      <td>26.19</td>
-    </tr>
-    <tr>
-      <th>MCHAD</th>
-      <td>70.51</td>
-      <td>0.31</td>
-      <td>76.80</td>
-      <td>12.20</td>
-      <td>82.38</td>
-      <td>9.29</td>
-      <td>69.56</td>
-      <td>14.24</td>
-      <td>76.64</td>
-      <td>31.39</td>
-    </tr>
-    <tr>
-      <th rowspan="3" valign="top">SVHN</th>
-      <th>G-CAC</th>
-      <td>96.42</td>
+      <td>89.05</td>
+      <td>0.44</td>
+      <td>97.68</td>
       <td>0.14</td>
-      <td>97.51</td>
-      <td>4.10</td>
-      <td>97.87</td>
-      <td>3.56</td>
-      <td>95.47</td>
-      <td>7.48</td>
-      <td>7.41</td>
-      <td>12.03</td>
+      <td>14.60</td>
+      <td>1.02</td>
+    </tr>
+    <tr>
+      <th>Center</th>
+      <td>96.06</td>
+      <td>0.01</td>
+      <td>97.96</td>
+      <td>0.11</td>
+      <td>94.15</td>
+      <td>0.24</td>
+      <td>98.89</td>
+      <td>0.08</td>
+      <td>6.35</td>
+      <td>0.31</td>
+    </tr>
+    <tr>
+      <th>G-CAC</th>
+      <td>94.22</td>
+      <td>0.03</td>
+      <td>98.77</td>
+      <td>0.18</td>
+      <td>97.84</td>
+      <td>0.31</td>
+      <td>99.12</td>
+      <td>0.13</td>
+      <td>5.67</td>
+      <td>0.97</td>
     </tr>
     <tr>
       <th>G-Center</th>
-      <td>96.36</td>
-      <td>0.13</td>
-      <td>94.75</td>
-      <td>2.31</td>
-      <td>96.95</td>
-      <td>1.79</td>
-      <td>86.68</td>
-      <td>5.56</td>
-      <td>24.58</td>
-      <td>7.87</td>
+      <td>95.87</td>
+      <td>0.01</td>
+      <td>99.33</td>
+      <td>0.11</td>
+      <td>98.29</td>
+      <td>0.28</td>
+      <td>99.69</td>
+      <td>0.05</td>
+      <td>2.60</td>
+      <td>0.41</td>
     </tr>
     <tr>
       <th>G-MCHAD</th>
-      <td>96.33</td>
-      <td>0.13</td>
-      <td>98.32</td>
-      <td>1.26</td>
-      <td>99.42</td>
-      <td>0.48</td>
-      <td>93.94</td>
-      <td>4.63</td>
-      <td>8.61</td>
-      <td>8.25</td>
+      <td>95.69</td>
+      <td>0.01</td>
+      <td>99.38</td>
+      <td>0.05</td>
+      <td>97.24</td>
+      <td>0.24</td>
+      <td>99.80</td>
+      <td>0.02</td>
+      <td>2.14</td>
+      <td>0.18</td>
+    </tr>
+    <tr>
+      <th>II</th>
+      <td>10.59</td>
+      <td>0.11</td>
+      <td>49.32</td>
+      <td>1.25</td>
+      <td>27.95</td>
+      <td>1.00</td>
+      <td>74.65</td>
+      <td>0.80</td>
+      <td>86.42</td>
+      <td>1.64</td>
+    </tr>
+    <tr>
+      <th>MCHAD</th>
+      <td>95.81</td>
+      <td>0.01</td>
+      <td>99.22</td>
+      <td>0.04</td>
+      <td>97.12</td>
+      <td>0.14</td>
+      <td>99.74</td>
+      <td>0.02</td>
+      <td>3.16</td>
+      <td>0.20</td>
     </tr>
   </tbody>
 </table>
@@ -642,7 +478,13 @@ experiment=svhn-gmchad trainer.gpus=1 model.weight_center=10.0 trainer.min_epoch
 ## Citation
 
 ```text
-{
-
+@article{kirchheim2022multi,
+	author = {Kirchheim, Konstantin and Filax, Marco and Ortmeier, Frank},
+	journal = {International Conference on Pattern Recognition},
+	number = {},
+	pages = {},
+	publisher = {IEEE},
+	title = {Multi-Class Hypersphere Anomaly Detection},
+	year = {2022}
 }
 ```
