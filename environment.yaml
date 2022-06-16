@@ -135,6 +135,7 @@ dependencies:
       - pytest==7.1.1
       - python-dotenv==0.20.0
       - pytorch-lightning==1.6.0
+      - pytorch-ood==0.0.7
       - pyyaml==6.0
       - ray==1.3.0
       - redis==4.2.0

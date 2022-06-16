@@ -39,7 +39,7 @@ conda env create --name mchad -f environment.yaml
 conda activate mchad
 
 # these would lead to conflicts or have been installed later
-pip install aiohttp==3.7 async-timeout==3.0.1 pytorch-ood=0.0.7 tensorboardX==2.5.1
+pip install aiohttp==3.7 async-timeout==3.0.1 tensorboardX==2.5.1
 ```
 
 ## Usage
