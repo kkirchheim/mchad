@@ -14,13 +14,16 @@
 <a href="https://github.com/ashleve/lightning-hydra-template">
     <img alt="Template" src="https://img.shields.io/badge/-Lightning--Hydra--Template-017F2F?style=flat&logo=github&labelColor=gray">
 </a>
+<a href="https://gitlab.com/kkirchheim/pytorch-ood">
+    <img alt="Template" src="https://img.shields.io/badge/-PyTorch--OOD-017F2F?style=flat&logo=gitlab&labelColor=gray">
+</a>
 <a href="https://github.com/ashleve/lightning-hydra-template">
     <img alt="Template" src="http://img.shields.io/badge/ICPR-2022-4b44ce.svg">
 </a>
 
 
 This Repository contains the source code for the paper _Multi-Class Hypersphere Anomaly Detection_ as
-accepted at ICPR 2022.
+presented at ICPR 2022.
 
 
 ![mchad](img/mchad.png)
@@ -69,6 +72,13 @@ python run.py -m experiment=cifar10-mchad trainer.gpus=1 seed="range(1,22)"
 We configured the Ray Launcher for parallelization.
 Per default, we run experiments in parallel on 21 GPUs.
 You might have to adjust `config/hydra/launcher/ray.yaml`.
+
+### Visualize Embeddings
+To visualize the embeddings of MCHAD, you can use the following callback:
+```shell
+python run.py experiment=cifar10-gmchad callbacks=mchad_embeds.yaml
+```
+This callback will save the embeddings to the tensorboard in TSV format. 
 
 ## Replication
 
