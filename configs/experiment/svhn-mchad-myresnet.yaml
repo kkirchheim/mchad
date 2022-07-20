@@ -1,4 +1,5 @@
 # @package _global_
+# this uses a custom backbone
 
 defaults:
   - override /trainer: svhn
@@ -7,7 +8,7 @@ defaults:
   - override /callbacks: mchad
   - override /logger: default
   - override /testmodules: svhn
-  - override /model/backbone: wideresnet
+  - override /model/backbone: null
   - override /model/scheduler: cosine
   - override /model/optimizer: adam
 
@@ -20,7 +21,19 @@ model:
   _target_: src.models.MCHAD
   n_classes: 10
   n_embedding: 16
-  margin: 4.0
+  margin: 4
   weight_center: 0.5
   weight_oe: 0.0
   weight_ce: 1.5 # ..
+  backbone:
+    _target_: src.models.components.WrappedResNet
+    # parameter is called num_classes, but refers to the number of output neurons
+    num_classes: ${model.n_embedding}
+    width: 32
+    depth: 20
+    drop_rate: 0.0
+
+trainer:
+  min_epochs: 50
+
+
