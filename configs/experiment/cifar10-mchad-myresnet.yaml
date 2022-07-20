@@ -1,0 +1,35 @@
+# @package _global_
+# this uses a custom backbone
+
+defaults:
+  - override /trainer: cifar10
+  - override /model: null
+  - override /datamodule: cifar10
+  - override /callbacks: mchad
+  - override /logger: default
+  - override /testmodules: cifar10
+  - override /model/backbone: null
+  - override /model/scheduler: cosine
+  - override /model/optimizer: adam
+
+seed: 12345
+deterministic: True
+debug: False
+ignore_warnings: True
+
+model:
+  _target_: src.models.MCHAD
+  n_classes: 10
+  n_embedding: 16
+  margin: 4
+  weight_center: 0.5
+  weight_oe: 0.0
+  weight_ce: 1.0
+  backbone:
+    _target_: src.models.components.WrappedResNet
+    # parameter is called num_classes, but refers to the number of output neurons
+    num_classes: ${model.n_embedding}
+    width: 16
+    depth: 3
+    drop_rate: 0.3
+
