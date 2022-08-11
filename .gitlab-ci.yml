@@ -1,4 +1,4 @@
-image: continuumio/anaconda3
+image: continuumio/anaconda3:2022.05
 
 stages:
   - test
