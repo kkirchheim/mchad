@@ -6,7 +6,7 @@ stages:
 before_script:
   - python -V # Print out python version for debugging
   - apt-get update
-  - apt-get install libc-dev
+  - apt-get install -y libc-dev
   - conda install gcc
   - conda env create --name mchad -f environment.yaml
   - conda activate mchad
