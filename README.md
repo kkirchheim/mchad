@@ -2,6 +2,12 @@
 
 # Multi-Class Hypersphere Anomaly Detection
 
+<a href="https://ieeexplore.ieee.org/abstract/document/9956337">
+    <img alt="Template" src="http://img.shields.io/badge/ICPR-2022-4b44ce.svg">
+</a>
+<a href="https://github.com/kkirchheim/pytorch-ood">
+    <img alt="Template" src="https://img.shields.io/badge/-PyTorch--OOD-017F2F?style=flat&logo=github&labelColor=gray">
+</a>
 <a href="https://pytorch.org/get-started/locally/">
     <img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-ee4c2c?logo=pytorch&logoColor=white">
 </a>
@@ -14,12 +20,7 @@
 <a href="https://github.com/ashleve/lightning-hydra-template">
     <img alt="Template" src="https://img.shields.io/badge/-Lightning--Hydra--Template-017F2F?style=flat&logo=github&labelColor=gray">
 </a>
-<a href="https://gitlab.com/kkirchheim/pytorch-ood">
-    <img alt="Template" src="https://img.shields.io/badge/-PyTorch--OOD-017F2F?style=flat&logo=gitlab&labelColor=gray">
-</a>
-<a href="https://github.com/ashleve/lightning-hydra-template">
-    <img alt="Template" src="http://img.shields.io/badge/ICPR-2022-4b44ce.svg">
-</a>
+
 
 
 This Repository contains the source code for the paper _Multi-Class Hypersphere Anomaly Detection_ as
