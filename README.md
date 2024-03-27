@@ -26,6 +26,7 @@
 This Repository contains the source code for the paper _Multi-Class Hypersphere Anomaly Detection_ as
 presented at ICPR 2022.
 
+You can find a minimal example [here](https://pytorch-ood.readthedocs.io/en/latest/auto_examples/loss/supervised/mchad.html#sphx-glr-auto-examples-loss-supervised-mchad-py). 
 
 ![mchad](img/mchad.png)
 
